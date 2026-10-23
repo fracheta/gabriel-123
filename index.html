@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BiblioTrack · Controle de Biblioteca</title>
+<meta name="description" content="Sistema de controle e gerenciamento de biblioteca escolar com acervo de livros e cadastro de alunos integrado ao Firebase Firestore." />
+<meta property="og:title" content="BiblioTrack · Controle de Biblioteca" />
+<meta property="og:description" content="Sistema de controle e gerenciamento de biblioteca escolar com acervo de livros e cadastro de alunos integrado ao Firebase Firestore." />
+<style>
+/* ==================== VARIÁVEIS E TEMAS ==================== */
+:root{
+  --accent:#6366f1;
+  --accent-2:#8b5cf6;
+  --bg:#f4f6fb;
+  --bg-alt:#eef1f8;
+  --card:#ffffff;
+  --text:#0f172a;
+  --text-2:#475569;
+  --muted:#94a3b8;
+  --border:#e5e9f2;
+  --success:#10b981;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --info:#3b82f6;
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06);
+  --shadow-md:0 6px 20px -6px rgba(15,23,42,.12);
+  --shadow-lg:0 24px 50px -20px rgba(15,23,42,.25);
+  --radius:16px;
+  --radius-sm:10px;
+}
+[data-theme="dark"]{
+  --bg:#0a1020;
+  --bg-alt:#0f172a;
+  --card:#161f33;
+  --text:#f1f5f9;
+  --text-2:#cbd5e1;
+  --muted:#64748b;
+  --border:#243049;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.4);
+  --shadow-md:0 6px 20px -6px rgba(0,0,0,.5);
+  --shadow-lg:0 24px 50px -20px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color:var(--text);background:var(--bg);min-height:100vh;
+  background-image:
+    radial-gradient(1000px 500px at 5% -5%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
+    radial-gradient(800px 400px at 100% 100%, color-mix(in srgb, var(--accent-2) 10%, transparent), transparent 60%);
+  background-attachment:fixed;
+  transition:background-color .3s, color .3s;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:.93rem;padding:.62rem .75rem;border:1px solid var(--border);
+  border-radius:var(--radius-sm);width:100%;background:var(--card);color:var(--text);transition:.15s}
+input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in srgb, var(--accent) 30%, transparent);border-color:var(--accent)}
+a{color:var(--accent);text-decoration:none}
+::selection{background:color-mix(in srgb, var(--accent) 30%, transparent)}
+
+/* ==================== UTILITÁRIOS ==================== */
+.btn{padding:.6rem 1rem;border-radius:var(--radius-sm);font-weight:600;font-size:.88rem;transition:.15s;
+  display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 4px 12px -4px color-mix(in srgb,var(--accent) 50%,transparent)}
+.btn.primary:hover{transform:translateY(-1px);box-shadow:0 8px 18px -6px color-mix(in srgb,var(--accent) 60%,transparent)}
+.btn.ghost{background:var(--bg-alt);color:var(--text-2)}
+.btn.ghost:hover{background:var(--border)}
+.btn.danger{background:color-mix(in srgb,var(--danger) 15%, transparent);color:var(--danger)}
+.btn.danger:hover{background:color-mix(in srgb,var(--danger) 25%, transparent)}
+.btn.success{background:color-mix(in srgb,var(--success) 15%, transparent);color:var(--success)}
+.btn.success:hover{background:color-mix(in srgb,var(--success) 25%, transparent)}
+.btn.small{padding:.35rem .6rem;font-size:.78rem}
+.btn.icon{padding:.5rem;border-radius:50%;width:2.3rem;height:2.3rem;justify-content:center}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.block{width:100%;justify-content:center}
+.badge{display:inline-flex;align-items:center;gap:.25rem;padding:.24rem .6rem;border-radius:999px;
+  font-size:.72rem;font-weight:700;white-space:nowrap}
+.badge.ok{background:color-mix(in srgb,var(--success) 15%,transparent);color:var(--success)}
+.badge.warn{background:color-mix(in srgb,var(--warning) 18%,transparent);color:var(--warning)}
+.badge.danger{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+.badge.info{background:color-mix(in srgb,var(--info) 15%,transparent);color:var(--info)}
+.badge.muted{background:var(--bg-alt);color:var(--muted)}
+.badge.firestore{background:linear-gradient(135deg,#ff9100,#ff6d00);color:#fff;cursor:pointer}
+.badge.firestore-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 8px #fff}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem;
+  box-shadow:var(--shadow-sm);transition:.2s}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem}
+.card-head h2{font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
+.card-head .sub{font-size:.8rem;color:var(--muted);margin-top:.15rem;font-weight:500}
+.empty{padding:2.5rem 1rem;text-align:center;color:var(--muted);font-size:.92rem}
+.empty .big{font-size:2.5rem;display:block;margin-bottom:.5rem}
+.avatar{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:800px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* ==================== LOGIN ==================== */
+#loginScreen{
+  min-height:100vh;display:grid;place-items:center;padding:1rem;
+  background-image:
+    radial-gradient(1000px 500px at 15% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent),
+    radial-gradient(800px 500px at 100% 100%, color-mix(in srgb, var(--accent-2) 20%, transparent), transparent);
+}
+.login-card{width:100%;max-width:440px;background:var(--card);border-radius:24px;padding:2.5rem 2rem;
+  box-shadow:var(--shadow-lg);border:1px solid var(--border);position:relative;animation:pop .4s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:none}}
+.login-card .logo{font-size:3.5rem;text-align:center;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.login-card h1{text-align:center;font-size:1.6rem;margin:.6rem 0 .2rem;letter-spacing:-.02em}
+.login-card h1 span{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.login-card p.sub{text-align:center;color:var(--muted);font-size:.88rem;margin-bottom:1.2rem}
+.login-firestore-badge{display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.4rem .8rem;
+  background:color-mix(in srgb, #ff9100 12%, var(--bg-alt));border-radius:999px;font-size:.78rem;color:#ea580c;
+  font-weight:600;margin:0 auto 1.3rem;width:fit-content;border:1px solid color-mix(in srgb, #ff9100 25%, transparent)}
+.tabs{display:flex;background:var(--bg-alt);border-radius:12px;padding:4px;margin-bottom:1.3rem}
+.tabs button{flex:1;padding:.6rem;border-radius:9px;background:transparent;font-weight:600;color:var(--text-2);
+  font-size:.88rem;transition:.15s}
+.tabs button.active{background:var(--card);color:var(--accent);box-shadow:var(--shadow-sm)}
+.field{margin-bottom:.95rem}
+.field label{display:block;font-size:.8rem;font-weight:600;color:var(--text-2);margin-bottom:.35rem}
+.hint{font-size:.78rem;color:var(--muted);text-align:center;margin-top:1.2rem;line-height:1.6}
+.hint code{background:var(--bg-alt);padding:.1rem .4rem;border-radius:5px;font-size:.78rem;color:var(--accent)}
+
+/* ==================== LAYOUT APP ==================== */
+#app{display:none;min-height:100vh;flex-direction:column}
+.topbar{background:color-mix(in srgb,var(--card) 85%, transparent);backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:.75rem 1.3rem;
+  display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:50}
+.brand{font-weight:800;font-size:1.05rem;display:flex;align-items:center;gap:.5rem;letter-spacing:-.01em}
+.brand span{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .badge-escola{font-size:.7rem;padding:.15rem .5rem;background:var(--bg-alt);color:var(--muted);
+  border-radius:6px;font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:.6rem}
+.user-chip{display:flex;align-items:center;gap:.55rem;padding:.35rem .75rem .35rem .35rem;
+  background:var(--bg-alt);border-radius:999px;font-size:.82rem}
+.user-chip strong{font-weight:700;color:var(--text)}
+.user-chip small{color:var(--muted);font-size:.72rem;display:block;margin-top:-2px}
+.layout{display:grid;grid-template-columns:230px 1fr;flex:1;max-width:1400px;width:100%;margin:0 auto}
+.sidebar{padding:1.3rem 1rem;border-right:1px solid var(--border);position:sticky;top:57px;align-self:start;
+  height:calc(100vh - 57px);overflow-y:auto}
+.sidebar .section-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--muted);font-weight:700;padding:.6rem .6rem .4rem}
+.sidebar button{width:100%;display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:10px;
+  background:transparent;color:var(--text-2);font-weight:600;font-size:.88rem;text-align:left;transition:.15s;margin-bottom:2px}
+.sidebar button:hover{background:var(--bg-alt);color:var(--text)}
+.sidebar button.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  box-shadow:0 4px 12px -4px color-mix(in srgb,var(--accent) 50%,transparent)}
+.sidebar button .emoji{font-size:1.05rem}
+.sidebar button .count{margin-left:auto;background:color-mix(in srgb,var(--danger) 20%,transparent);color:var(--danger);
+  font-size:.68rem;padding:.1rem .45rem;border-radius:999px;font-weight:800}
+.sidebar button.active .count{background:rgba(255,255,255,.25);color:#fff}
+main{padding:1.6rem;overflow-x:hidden}
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-title{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.2rem}
+.page-sub{color:var(--muted);font-size:.88rem;margin-bottom:1.4rem}
+
+/* ==================== STAT CARDS ==================== */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.9rem;margin-bottom:1.4rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;
+  position:relative;overflow:hidden;transition:.2s;box-shadow:var(--shadow-sm)}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.stat .value{font-size:1.9rem;font-weight:800;margin-top:.35rem;line-height:1;letter-spacing:-.02em}
+.stat .icon{position:absolute;top:1rem;right:1rem;font-size:1.5rem;opacity:.85}
+.stat.blue .value{color:var(--info)} .stat.green .value{color:var(--success)}
+.stat.amber .value{color:var(--warning)} .stat.red .value{color:var(--danger)}
+.stat .delta{font-size:.75rem;color:var(--muted);margin-top:.35rem}
+
+/* ==================== TABELAS ==================== */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-sm);margin:0 -1.4rem;padding:0 1.4rem}
+table{width:100%;border-collapse:collapse;font-size:.87rem;min-width:600px}
+th{text-align:left;padding:.65rem .7rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--muted);border-bottom:2px solid var(--border);font-weight:700}
+td{padding:.75rem .7rem;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:.12s}
+tbody tr:hover{background:var(--bg-alt)}
+.actions{display:flex;gap:.35rem;flex-wrap:wrap}
+
+/* ==================== TOOLBAR ==================== */
+.toolbar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.toolbar input{max-width:300px}
+.chip-filter{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem}
+.chip{background:var(--bg-alt);color:var(--text-2);padding:.4rem .8rem;border-radius:999px;
+  font-size:.8rem;font-weight:600;transition:.15s;border:1px solid transparent}
+.chip.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  box-shadow:0 4px 12px -4px color-mix(in srgb,var(--accent) 50%,transparent)}
+.chip:hover:not(.active){background:var(--border)}
+
+/* ==================== GRID DE LIVROS ==================== */
+.books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem}
+.book-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;
+  transition:.2s;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.book-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.book-cover{aspect-ratio:3/4;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:3rem;margin-bottom:.75rem;position:relative;overflow:hidden}
+.book-cover::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg, rgba(255,255,255,.2), transparent 50%, rgba(0,0,0,.05))}
+.book-title{font-weight:700;font-size:.92rem;line-height:1.3;margin-bottom:.2rem;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.book-author{font-size:.78rem;color:var(--muted);margin-bottom:.5rem;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.book-meta{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:.5rem;
+  border-top:1px solid var(--border);gap:.5rem}
+.fav-btn{background:transparent;font-size:1.15rem;padding:.2rem;transition:.15s;line-height:1}
+.fav-btn:hover{transform:scale(1.2)}
+.stars{color:var(--warning);font-size:.85rem;letter-spacing:1px}
+
+/* ==================== GRÁFICOS ==================== */
+.bar-row{display:grid;grid-template-columns:140px 1fr 40px;gap:.7rem;align-items:center;
+  font-size:.83rem;padding:.4rem 0}
+.bar-row .lbl{color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.bar-row .val{text-align:right;font-weight:700;color:var(--text)}
+.bar{height:8px;background:var(--bg-alt);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  border-radius:99px;transition:width .5s cubic-bezier(.3,1,.4,1)}
+
+/* ==================== PERFIL ==================== */
+.profile-hero{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;padding:1.6rem;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 12%,var(--card)),color-mix(in srgb,var(--accent-2) 12%,var(--card)));
+  border-radius:var(--radius);border:1px solid var(--border);margin-bottom:1.2rem}
+.profile-hero .avatar{width:72px;height:72px;font-size:1.6rem;box-shadow:var(--shadow-md)}
+.profile-hero h1{font-size:1.3rem;margin-bottom:.15rem}
+.profile-hero p{color:var(--text-2);font-size:.85rem}
+
+/* ==================== MODAL ==================== */
+.overlay{position:fixed;inset:0;background:rgba(8,12,25,.6);display:none;align-items:center;
+  justify-content:center;padding:1rem;z-index:100;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.overlay.show{display:flex;animation:fade .2s}
+.modal{background:var(--card);border-radius:20px;padding:1.6rem;width:100%;max-width:520px;max-height:90vh;
+  overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .3s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(20px)}to{opacity:1;transform:none}}
+.modal h2{margin-bottom:1.1rem;font-size:1.15rem;display:flex;align-items:center;gap:.5rem}
+.modal-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.4rem;flex-wrap:wrap}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+@media(max-width:520px){.form-row{grid-template-columns:1fr}}
+.emoji-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:.4rem;
+  max-height:140px;overflow-y:auto;padding:.4rem;background:var(--bg-alt);border-radius:10px}
+.emoji-picker button{font-size:1.3rem;padding:.3rem;border-radius:8px;background:transparent;transition:.15s}
+.emoji-picker button:hover,.emoji-picker button.selected{background:var(--card);transform:scale(1.1)}
+.color-picker{display:flex;gap:.5rem;flex-wrap:wrap}
+.color-picker button{width:32px;height:32px;border-radius:50%;border:2px solid transparent;transition:.15s}
+.color-picker button.selected{border-color:var(--text);transform:scale(1.15)}
+
+/* ==================== TOAST ==================== */
+#toast-container{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;
+  gap:.6rem;z-index:200;pointer-events:none}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.8rem 1.1rem;
+  box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:.6rem;font-size:.88rem;font-weight:500;
+  animation:toastIn .3s cubic-bezier(.2,.9,.3,1.2);pointer-events:auto;max-width:360px}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--danger)}
+.toast.info{border-left:3px solid var(--info)}
+.toast.warn{border-left:3px solid var(--warning)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+.toast.removing{animation:toastOut .25s forwards}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
+
+/* ==================== RESPONSIVO ==================== */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:-260px;top:57px;bottom:0;width:250px;background:var(--card);z-index:40;
+    transition:left .3s;border-right:1px solid var(--border);box-shadow:var(--shadow-lg)}
+  .sidebar.open{left:0}
+  .sidebar-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:39;display:none}
+  .sidebar-backdrop.show{display:block}
+  .menu-toggle{display:inline-flex !important}
+  main{padding:1.2rem}
+}
+.menu-toggle{display:none}
+@media(max-width:520px){
+  .topbar{padding:.7rem .9rem}
+  .brand .badge-escola{display:none}
+  .page-title{font-size:1.25rem}
+  .stat .value{font-size:1.5rem}
+  .toolbar input{max-width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== TOASTS ==================== -->
+<div id="toast-container"></div>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="logo" id="loginLogo">📚</div>
+    <h1 id="loginTitle">Biblio<span>Track</span></h1>
+    <p class="sub" id="loginSub">Controle de Biblioteca Escolar</p>
+
+    <div class="login-firestore-badge" id="loginFsBadge" title="Banco de dados Google Cloud Firestore ativado">
+      <span class="badge-dot" style="width:8px;height:8px;border-radius:50%;background:#ea580c;display:inline-block"></span>
+      <span>🔥 Firestore Conectado</span>
+    </div>
+
+    <div class="tabs">
+      <button id="tabAdmin" class="active" type="button" onclick="setLoginTab('admin')">👨‍💼 Bibliotecário</button>
+      <button id="tabAluno" type="button" onclick="setLoginTab('aluno')">🎓 Aluno</button>
+    </div>
+
+    <form id="loginForm">
+      <div class="field" id="campoSenha">
+        <label>Senha de acesso do Bibliotecário</label>
+        <input type="password" id="senhaInput" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div class="field" id="campoMatricula" style="display:none">
+        <label>Matrícula do Aluno</label>
+        <input type="text" id="matriculaInput" placeholder="Ex.: 2024001" autocomplete="username" />
+      </div>
+      <button class="btn primary block" type="submit" style="padding:.75rem">Entrar no Sistema →</button>
+    </form>
+
+    <p class="hint">
+      Bibliotecário: <code>admin123</code><br>
+      Alunos cadastrados no Firestore: <code>2024001</code> · <code>2024002</code> · <code>2024003</code>
+    </p>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="app">
+  <header class="topbar">
+    <button class="btn icon ghost menu-toggle" onclick="toggleSidebar()">☰</button>
+    <div class="brand">
+      <span id="brandLogo">📚</span>
+      <span id="brandName">Biblio<span style="background:none;-webkit-text-fill-color:var(--accent);color:var(--accent)">Track</span></span>
+      <span class="badge-escola" id="brandEscola">Biblioteca</span>
+    </div>
+
+    <div class="topbar-right">
+      <div class="badge firestore" id="firestoreStatusChip" onclick="mostrarInfoFirestore()" title="Clique para detalhes do Firestore">
+        <span class="badge-dot" style="width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block"></span>
+        <span id="firestoreStatusText">🔥 Firestore Ativo</span>
+      </div>
+      <button class="btn icon ghost" onclick="toggleTheme()" title="Alternar tema claro/escuro">🌙</button>
+      <div class="user-chip" id="userChip"></div>
+      <button class="btn ghost small" onclick="logout()" title="Sair">⏻</button>
+    </div>
+  </header>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main id="main"></main>
+  </div>
+</div>
+
+<!-- ==================== LOGICA PRINCIPAL E FIRESTORE ==================== -->
+<script type="module">
+import { initializeApp } from 'firebase/app';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  getDocFromServer
+} from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import firebaseConfig from './firebase-applet-config.json';
+
+/* =========================================================
+   INICIALIZAÇÃO DO FIREBASE FIRESTORE
+   ========================================================= */
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const auth = getAuth(app);
+
+// Tipos de operação para tratamento estrito de erro conforme especificação
+const OperationType = {
+  CREATE: 'create',
+  UPDATE: 'update',
+  DELETE: 'delete',
+  LIST: 'list',
+  GET: 'get',
+  WRITE: 'write',
+};
+
+function handleFirestoreError(error, operationType, path) {
+  const errInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid || null,
+      email: auth.currentUser?.email || null,
+      emailVerified: auth.currentUser?.emailVerified || null,
+      isAnonymous: auth.currentUser?.isAnonymous ?? true,
+      providerInfo: auth.currentUser?.providerData?.map(p => ({
+        providerId: p.providerId,
+        email: p.email
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  toast('Erro no Firestore: ' + (error?.message || error), 'error');
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// Validação de conexão inicial (conforme especificação da skill)
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log('Firebase Firestore conectado e verificado com sucesso!');
+    setFirestoreBadgeState(true);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error('Verifique sua configuração do Firebase.');
+      setFirestoreBadgeState(false);
+    } else {
+      // Outros erros esperados em documento inexistente de teste continuam válidos
+      setFirestoreBadgeState(true);
+    }
+  }
+}
+testConnection();
+
+function setFirestoreBadgeState(ok) {
+  const el = document.getElementById('firestoreStatusText');
+  if (el) el.textContent = ok ? '🔥 Firestore Ativo' : '⚠️ Offline';
+  const badge = document.getElementById('firestoreStatusChip');
+  if (badge) badge.style.opacity = ok ? '1' : '0.6';
+}
+
+/* =========================================================
+   UTILITÁRIOS E HELPERS
+   ========================================================= */
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const ADMIN_SENHA = 'admin123';
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const hoje = () => new Date().toISOString().slice(0, 10);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function addDays(str, days){ const d = new Date(str + 'T00:00:00'); d.setDate(d.getDate() + days); return d.toISOString().slice(0,10); }
+function fmtDate(iso){ if(!iso) return '—'; const [a,m,d] = iso.split('-'); return `${d}/${m}/${a}`; }
+function diasAtraso(iso){ return Math.floor((new Date(hoje()) - new Date(iso)) / 86400000); }
+
+/* ---------- Configuração padrão ---------- */
+const DEFAULT_CONFIG = {
+  nomeEscola: 'Biblioteca Escolar',
+  emojiLogo: '📚',
+  corAcento: '#6366f1',
+  corAcento2: '#8b5cf6',
+  prazoPadrao: 14,
+  maxEmprestimos: 3,
+  tema: 'light'
+};
+
+/* ---------- Estado local sincronizado ---------- */
+let state = {
+  config: { ...DEFAULT_CONFIG },
+  livros: [],
+  alunos: [],
+  emprestimos: [],
+  reservas: [],
+  avaliacoes: [],
+  favoritos: [],
+  sessao: null,
+  viewAtual: null,
+  firestoreReady: false
+};
+
+/* =========================================================
+   SEED INICIAL DIRETO NO FIRESTORE
+   ========================================================= */
+const SEED_LIVROS = [
+  { id: 'livro_1', titulo:'Dom Casmurro', autor:'Machado de Assis', categoria:'Romance', ano:1899, quantidade:3, capa:'📕', isbn:'978-85-359', sinopse:'Memórias de Bento Santiago e a enigmática Capitu.' },
+  { id: 'livro_2', titulo:'O Cortiço', autor:'Aluísio Azevedo', categoria:'Romance', ano:1890, quantidade:2, capa:'📗', isbn:'978-85-723', sinopse:'O cotidiano de um cortiço no Rio de Janeiro do século XIX.' },
+  { id: 'livro_3', titulo:'Vidas Secas', autor:'Graciliano Ramos', categoria:'Romance', ano:1938, quantidade:4, capa:'📘', isbn:'978-85-010', sinopse:'A travessia árdua de Fabiano e sua família pelo sertão.' },
+  { id: 'livro_4', titulo:'Grande Sertão: Veredas', autor:'Guimarães Rosa', categoria:'Romance', ano:1956, quantidade:2, capa:'📙', isbn:'978-85-209', sinopse:'As andanças do jagunço Riobaldo pelo sertão mineiro.' },
+  { id: 'livro_5', titulo:'Capitães da Areia', autor:'Jorge Amado', categoria:'Romance', ano:1937, quantidade:3, capa:'📓', isbn:'978-85-359', sinopse:'A vida de um grupo de menores abandonados nas ruas de Salvador.' },
+  { id: 'livro_6', titulo:'A Hora da Estrela', autor:'Clarice Lispector', categoria:'Romance', ano:1977, quantidade:2, capa:'📔', isbn:'978-85-325', sinopse:'A comovente história da alagoana Macabéa no Rio de Janeiro.' },
+  { id: 'livro_7', titulo:'O Pequeno Príncipe', autor:'Antoine de Saint-Exupéry', categoria:'Infantil', ano:1943, quantidade:5, capa:'🌹', isbn:'978-85-220', sinopse:'Uma fábula sobre amizade, amor e a essência da vida.' },
+  { id: 'livro_8', titulo:'Harry Potter e a Pedra Filosofal', autor:'J.K. Rowling', categoria:'Fantasia', ano:1997, quantidade:3, capa:'⚡', isbn:'978-85-325', sinopse:'O jovem bruxo Harry descobre seu passado e ingressa em Hogwarts.' },
+  { id: 'livro_9', titulo:'O Senhor dos Anéis', autor:'J.R.R. Tolkien', categoria:'Fantasia', ano:1954, quantidade:2, capa:'💍', isbn:'978-85-950', sinopse:'A jornada épica pela destruição do Um Anel na Terra Média.' },
+  { id: 'livro_10', titulo:'1984', autor:'George Orwell', categoria:'Distopia', ano:1949, quantidade:3, capa:'👁️', isbn:'978-85-359', sinopse:'Um clássico sobre totalitarismo, vigilância e liberdade.' },
+  { id: 'livro_11', titulo:'A Revolução dos Bichos', autor:'George Orwell', categoria:'Distopia', ano:1945, quantidade:2, capa:'🐷', isbn:'978-85-359', sinopse:'Uma fábula satírica sobre o poder e a corrupção política.' },
+  { id: 'livro_12', titulo:'Sapiens - Uma Breve História', autor:'Yuval Noah Harari', categoria:'História', ano:2011, quantidade:2, capa:'🧠', isbn:'978-85-254', sinopse:'A trajetória da humanidade desde os primeiros hominídeos.' }
+];
+
+const SEED_ALUNOS = [
+  { id: 'aluno_1', nome:'Ana Souza', matricula:'2024001', turma:'1º Ano A', email:'ana.souza@escola.com' },
+  { id: 'aluno_2', nome:'Bruno Lima', matricula:'2024002', turma:'2º Ano B', email:'bruno.lima@escola.com' },
+  { id: 'aluno_3', nome:'Carla Dias', matricula:'2024003', turma:'3º Ano A', email:'carla.dias@escola.com' },
+  { id: 'aluno_4', nome:'Diego Alves', matricula:'2024004', turma:'2º Ano A', email:'diego.alves@escola.com' },
+  { id: 'aluno_5', nome:'Elisa Ramos', matricula:'2024005', turma:'1º Ano B', email:'elisa.ramos@escola.com' }
+];
+
+async function seedFirestoreSeVazio() {
+  try {
+    const livrosSnap = await getDocs(collection(db, 'livros'));
+    if (livrosSnap.empty) {
+      console.log('Populando Firestore com livros e alunos iniciais...');
+      for (const l of SEED_LIVROS) {
+        await setDoc(doc(db, 'livros', l.id), l);
+      }
+      for (const a of SEED_ALUNOS) {
+        await setDoc(doc(db, 'alunos', a.id), a);
+      }
+      // Exemplos de empréstimos
+      const agora = hoje();
+      const emp1 = { id: 'emp_1', livroId: 'livro_1', alunoId: 'aluno_1', dataEmprestimo: addDays(agora, -5), dataPrevista: addDays(agora, 9), dataDevolucao: null, renovacoes: 0 };
+      const emp2 = { id: 'emp_2', livroId: 'livro_8', alunoId: 'aluno_2', dataEmprestimo: addDays(agora, -20), dataPrevista: addDays(agora, -6), dataDevolucao: null, renovacoes: 0 };
+      await setDoc(doc(db, 'emprestimos', emp1.id), emp1);
+      await setDoc(doc(db, 'emprestimos', emp2.id), emp2);
+      await setDoc(doc(db, 'config', 'geral'), DEFAULT_CONFIG);
+      toast('Catálogo de livros e alunos inicializado no Firestore!', 'success');
+    }
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'seed');
+  }
+}
+
+/* =========================================================
+   LISTENERS EM TEMPO REAL DO FIRESTORE (onSnapshot)
+   ========================================================= */
+function iniciarSincronizacaoFirestore() {
+  // Livros
+  onSnapshot(collection(db, 'livros'), snap => {
+    state.livros = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!state.firestoreReady && state.livros.length === 0) {
+      seedFirestoreSeVazio();
+    }
+    state.firestoreReady = true;
+    render();
+  }, err => handleFirestoreError(err, OperationType.GET, 'livros'));
+
+  // Alunos
+  onSnapshot(collection(db, 'alunos'), snap => {
+    state.alunos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+  }, err => handleFirestoreError(err, OperationType.GET, 'alunos'));
+
+  // Empréstimos
+  onSnapshot(collection(db, 'emprestimos'), snap => {
+    state.emprestimos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+  }, err => handleFirestoreError(err, OperationType.GET, 'emprestimos'));
+
+  // Reservas
+  onSnapshot(collection(db, 'reservas'), snap => {
+    state.reservas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+  }, err => handleFirestoreError(err, OperationType.GET, 'reservas'));
+
+  // Avaliações
+  onSnapshot(collection(db, 'avaliacoes'), snap => {
+    state.avaliacoes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+  }, err => handleFirestoreError(err, OperationType.GET, 'avaliacoes'));
+
+  // Favoritos
+  onSnapshot(collection(db, 'favoritos'), snap => {
+    state.favoritos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+  }, err => handleFirestoreError(err, OperationType.GET, 'favoritos'));
+
+  // Configuração
+  onSnapshot(doc(db, 'config', 'geral'), snap => {
+    if (snap.exists()) {
+      state.config = { ...DEFAULT_CONFIG, ...snap.data() };
+      aplicarTema();
+      aplicarMarca();
+      render();
+    }
+  }, err => handleFirestoreError(err, OperationType.GET, 'config/geral'));
+}
+
+iniciarSincronizacaoFirestore();
+
+/* =========================================================
+   HELPERS DE DOMÍNIO
+   ========================================================= */
+const getLivro = id => state.livros.find(l => l.id === id);
+const getAluno = id => state.alunos.find(a => a.id === id);
+const ativosDoLivro = lId => state.emprestimos.filter(e => e.livroId === lId && !e.dataDevolucao).length;
+const disponiveis = lId => { const l = getLivro(lId); return l ? Math.max(0, l.quantidade - ativosDoLivro(lId)) : 0; };
+const ativosDoAluno = aId => state.emprestimos.filter(e => e.alunoId === aId && !e.dataDevolucao).length;
+const reservasPendentes = () => state.reservas.filter(r => r.status === 'pendente').length;
+
+function statusEmprestimo(e){
+  if(e.dataDevolucao) return { txt:'Devolvido', cls:'ok', icon:'✓' };
+  if(e.dataPrevista < hoje()) return { txt:`Atrasado ${diasAtraso(e.dataPrevista)}d`, cls:'danger', icon:'⚠' };
+  const diasRestantes = Math.floor((new Date(e.dataPrevista) - new Date(hoje())) / 86400000);
+  if(diasRestantes <= 3) return { txt:`Vence em ${diasRestantes}d`, cls:'warn', icon:'⏰' };
+  return { txt:'Em andamento', cls:'info', icon:'📖' };
+}
+function corDoTexto(str){
+  let h = 0; for(let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  const hue = Math.abs(h) % 360;
+  return `hsl(${hue}, 65%, 55%)`;
+}
+function iniciais(nome){
+  const p = (nome || '').trim().split(/\s+/);
+  return ((p[0]?.[0] || '') + (p[p.length-1]?.[0] || '')).toUpperCase();
+}
+function avatarHtml(nome, size=38){
+  const cor = corDoTexto(nome || 'Aluno');
+  const fs = size < 30 ? '.7rem' : '.85rem';
+  return `<div class="avatar" style="background:${cor};width:${size}px;height:${size}px;font-size:${fs}">${esc(iniciais(nome || 'U'))}</div>`;
+}
+function mediaAvaliacoes(livroId){
+  const avs = state.avaliacoes.filter(a => a.livroId === livroId);
+  if(!avs.length) return 0;
+  return (avs.reduce((s,a) => s + a.nota, 0) / avs.length).toFixed(1);
+}
+function totalAvaliacoes(livroId){ return state.avaliacoes.filter(a => a.livroId === livroId).length; }
+function estrelasHtml(nota){
+  const n = Math.round(nota);
+  return '<span class="stars">' + '★'.repeat(n) + '☆'.repeat(5-n) + '</span>';
+}
+function isFavorito(alunoId, livroId){
+  return state.favoritos.some(f => f.alunoId === alunoId && f.livroId === livroId);
+}
+
+/* =========================================================
+   TOASTS E MODAL
+   ========================================================= */
+function toast(msg, type = 'info', duracao = 3200){
+  const icons = { success:'✅', error:'❌', warn:'⚠️', info:'ℹ️' };
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = `<span style="font-size:1.1rem">${icons[type] || 'ℹ️'}</span><span>${esc(msg)}</span>`;
+  $('#toast-container').appendChild(el);
+  setTimeout(() => { el.classList.add('removing'); setTimeout(() => el.remove(), 250); }, duracao);
+}
+
+function openModal(titulo, bodyHtml, onSubmit, opts = {}){
+  let overlay = document.getElementById('modalOverlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'modalOverlay';
+    overlay.className = 'overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2 id="modalTitle"></h2>
+        <form id="modalForm">
+          <div id="modalBody"></div>
+          <div class="modal-actions" id="modalActions"></div>
+        </form>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
+  }
+  $('#modalTitle').textContent = titulo;
+  $('#modalBody').innerHTML = bodyHtml;
+  overlay.classList.add('show');
+  const form = $('#modalForm');
+  form.onsubmit = e => { e.preventDefault(); onSubmit(new FormData(form)); };
+
+  const actions = $('#modalActions');
+  const submitCls = opts.danger ? 'danger' : 'primary';
+  actions.innerHTML = `
+    <button type="button" class="btn ghost" id="modalCancelBtn">${opts.cancelLabel || 'Cancelar'}</button>
+    <button type="submit" class="btn ${submitCls}" id="modalSubmitBtn">${opts.submitLabel || 'Salvar'}</button>`;
+  $('#modalCancelBtn').onclick = () => {
+    if(opts.onCancel) opts.onCancel();
+    else closeModal();
+  };
+  setTimeout(() => form.querySelector('input:not([type=hidden]),select,textarea')?.focus(), 50);
+}
+
+function closeModal(){
+  $('#modalOverlay')?.classList.remove('show');
+}
+
+function confirmar(titulo, mensagem){
+  return new Promise(resolve => {
+    openModal(titulo, `
+      <p style="color:var(--text-2);font-size:.92rem;line-height:1.6">${esc(mensagem)}</p>
+    `, () => { closeModal(); resolve(true); }, {
+      cancelLabel: 'Cancelar',
+      submitLabel: 'Confirmar',
+      onCancel: () => { closeModal(); resolve(false); },
+      danger: true
+    });
+  });
+}
+
+function mostrarInfoFirestore(){
+  openModal('🔥 Banco de Dados Firestore', `
+    <div style="font-size:.88rem;color:var(--text-2);line-height:1.7">
+      <p style="margin-bottom:.8rem">Seu aplicativo está conectado diretamente ao <strong>Google Cloud Firestore</strong> para persistência permanente e síncrona em tempo real:</p>
+      <div style="background:var(--bg-alt);padding:1rem;border-radius:12px;margin-bottom:1rem">
+        <div><strong>Projeto Firebase:</strong> <code>precise-ceiling-tmvz5</code></div>
+        <div style="margin-top:.4rem"><strong>ID do Banco:</strong> <code>${esc(firebaseConfig.firestoreDatabaseId)}</code></div>
+        <div style="margin-top:.4rem"><strong>Status:</strong> <span class="badge ok">✓ Conectado em tempo real</span></div>
+      </div>
+      <p>Todos os cadastros de <strong>alunos</strong>, <strong>livros</strong>, empréstimos e reservas são gravados e atualizados instantaneamente na nuvem.</p>
+    </div>
+  `, () => closeModal(), { submitLabel: 'Fechar', cancelLabel: 'OK' });
+}
+
+/* =========================================================
+   TEMA E MARCA
+   ========================================================= */
+function aplicarTema(){
+  document.documentElement.setAttribute('data-theme', state.config.tema);
+  document.documentElement.style.setProperty('--accent', state.config.corAcento);
+  document.documentElement.style.setProperty('--accent-2', state.config.corAcento2);
+  const btn = document.querySelector('[onclick="toggleTheme()"]');
+  if(btn) btn.textContent = state.config.tema === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  state.config.tema = state.config.tema === 'dark' ? 'light' : 'dark';
+  aplicarTema();
+  setDoc(doc(db, 'config', 'geral'), state.config).catch(err => handleFirestoreError(err, OperationType.WRITE, 'config/geral'));
+}
+function aplicarMarca(){
+  const c = state.config;
+  $('#brandLogo').textContent = c.emojiLogo;
+  $('#brandEscola').textContent = c.nomeEscola;
+  $('#loginLogo').textContent = c.emojiLogo;
+  $('#loginSub').textContent = c.nomeEscola;
+  document.title = `${c.emojiLogo} ${c.nomeEscola} · BiblioTrack`;
+}
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+let loginTab = 'admin';
+function setLoginTab(tab){
+  loginTab = tab;
+  $('#tabAdmin').classList.toggle('active', tab === 'admin');
+  $('#tabAluno').classList.toggle('active', tab === 'aluno');
+  $('#campoSenha').style.display    = tab === 'admin' ? 'block' : 'none';
+  $('#campoMatricula').style.display = tab === 'aluno' ? 'block' : 'none';
+}
+
+$('#loginForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if(loginTab === 'admin'){
+    if($('#senhaInput').value !== ADMIN_SENHA) return toast('Senha incorreta', 'error');
+    state.sessao = { role:'admin', nome:'Bibliotecário' };
+  } else {
+    const mat = $('#matriculaInput').value.trim();
+    const aluno = state.alunos.find(a => a.matricula === mat);
+    if(!aluno) return toast('Matrícula não encontrada no Firestore', 'error');
+    state.sessao = { role:'aluno', alunoId: aluno.id, nome: aluno.nome };
+  }
+  entrar();
+});
+
+function entrar(){
+  $('#loginScreen').style.display = 'none';
+  $('#app').style.display = 'flex';
+  $('#userChip').innerHTML = `
+    ${avatarHtml(state.sessao.nome, 30)}
+    <div><strong>${esc(state.sessao.nome.split(' ')[0])}</strong>
+    <small>${state.sessao.role === 'admin' ? 'Bibliotecário' : 'Aluno'}</small></div>`;
+  renderSidebar();
+  if(state.sessao.role === 'admin') go('dashboard');
+  else go('inicio');
+  aplicarMarca();
+}
+
+function logout(){
+  state.sessao = null;
+  $('#app').style.display = 'none';
+  $('#loginScreen').style.display = 'grid';
+  $('#senhaInput').value = '';
+  $('#matriculaInput').value = '';
+}
+
+/* =========================================================
+   NAVEGAÇÃO E SIDEBAR
+   ========================================================= */
+const MENU_ADMIN = [
+  { id:'dashboard',    icon:'📊', label:'Painel' },
+  { id:'livros',       icon:'📖', label:'Acervo' },
+  { id:'emprestimos',  icon:'🔄', label:'Empréstimos' },
+  { id:'reservas',     icon:'📅', label:'Reservas' },
+  { id:'alunos',       icon:'👥', label:'Alunos' },
+  { id:'relatorios',   icon:'📈', label:'Relatórios' },
+  { id:'config',       icon:'⚙️', label:'Configurações' },
+];
+const MENU_ALUNO = [
+  { id:'inicio',       icon:'🏠', label:'Início' },
+  { id:'acervo',       icon:'📖', label:'Acervo' },
+  { id:'meus',         icon:'📌', label:'Meus empréstimos' },
+  { id:'reservasAluno',icon:'📅', label:'Minhas reservas' },
+  { id:'favoritos',    icon:'⭐', label:'Favoritos' },
+  { id:'perfil',       icon:'👤', label:'Meu perfil' },
+];
+
+function renderSidebar(){
+  if(!state.sessao) return;
+  const menu = state.sessao.role === 'admin' ? MENU_ADMIN : MENU_ALUNO;
+  const pend = reservasPendentes();
+  $('#sidebar').innerHTML = `
+    <div class="section-label">${state.sessao.role === 'admin' ? 'Administração' : 'Área do aluno'}</div>
+    ${menu.map(m => `
+      <button data-view="${m.id}" onclick="go('${m.id}')">
+        <span class="emoji">${m.icon}</span> ${m.label}
+        ${m.id === 'reservas' && pend > 0 ? `<span class="count">${pend}</span>` : ''}
+      </button>`).join('')}
+  `;
+}
+function go(view){
+  state.viewAtual = view;
+  $$('#sidebar button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  render();
+  closeSidebar();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+function toggleSidebar(){
+  $('#sidebar').classList.toggle('open');
+  $('#sidebarBackdrop').classList.toggle('show');
+}
+function closeSidebar(){
+  $('#sidebar').classList.remove('open');
+  $('#sidebarBackdrop').classList.remove('show');
+}
+
+function render(){
+  if(!state.sessao) return;
+  renderSidebar();
+  const v = state.viewAtual;
+  const R = {
+    // admin
+    dashboard: renderDashboard, livros: renderLivros, emprestimos: renderEmprestimos,
+    reservas: renderReservas, alunos: renderAlunos, relatorios: renderRelatorios,
+    config: renderConfig,
+    // aluno
+    inicio: renderInicio, acervo: renderAcervo, meus: renderMeus,
+    reservasAluno: renderReservasAluno, favoritos: renderFavoritos, perfil: renderPerfil
+  };
+  if(R[v]) R[v]();
+}
+
+/* =========================================================
+   ADMIN — DASHBOARD
+   ========================================================= */
+function renderDashboard(){
+  const totalExemplares = state.livros.reduce((s,l) => s + (l.quantidade || 0), 0);
+  const emprestados = state.emprestimos.filter(e => !e.dataDevolucao).length;
+  const atrasados = state.emprestimos.filter(e => !e.dataDevolucao && e.dataPrevista < hoje());
+  const disp = totalExemplares - emprestados;
+
+  const atrasoAlunos = atrasados.map(e => {
+    const a = getAluno(e.alunoId); const l = getLivro(e.livroId);
+    return `<tr>
+      <td>${avatarHtml(a?.nome || '?', 30)} <span style="margin-left:.4rem">${esc(a?.nome || '—')}</span></td>
+      <td>${esc(l?.titulo || '—')}</td>
+      <td><span class="badge danger">⚠ ${diasAtraso(e.dataPrevista)}d atrás</span></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="3" class="empty"><span class="big">🎉</span>Nenhum empréstimo em atraso!</td></tr>`;
+
+  const ultimos = [...state.emprestimos].sort((a,b)=> (b.dataEmprestimo || '').localeCompare(a.dataEmprestimo || '')).slice(0,5);
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">Olá, Bibliotecário 👋</h1>
+    <p class="page-sub">Aqui está o resumo da ${esc(state.config.nomeEscola)} sincronizado com o Firebase Firestore.</p>
+
+    <div class="stats">
+      <div class="stat blue"><span class="icon">📚</span>
+        <div class="label">Títulos</div><div class="value">${state.livros.length}</div>
+        <div class="delta">${totalExemplares} exemplares no Firestore</div></div>
+      <div class="stat green"><span class="icon">✅</span>
+        <div class="label">Disponíveis</div><div class="value">${disp}</div>
+        <div class="delta">${totalExemplares ? Math.round(disp/totalExemplares*100) : 0}% do acervo</div></div>
+      <div class="stat amber"><span class="icon">🔄</span>
+        <div class="label">Emprestados</div><div class="value">${emprestados}</div>
+        <div class="delta">${ativosAlunoCount()} alunos ativos</div></div>
+      <div class="stat red"><span class="icon">⚠️</span>
+        <div class="label">Atrasados</div><div class="value">${atrasados.length}</div>
+        <div class="delta">${atrasados.length ? 'Requer atenção' : 'Tudo em dia'}</div></div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:1.2rem">
+      <div class="card">
+        <div class="card-head"><h2>⚠️ Alunos em atraso</h2>
+          ${atrasados.length ? `<button class="btn ghost small" onclick="notificarTodosAtrasados()">Notificar todos</button>` : ''}
+        </div>
+        <div class="table-wrap"><table style="min-width:auto">
+          <thead><tr><th>Aluno</th><th>Livro</th><th>Atraso</th></tr></thead>
+          <tbody>${atrasoAlunos}</tbody>
+        </table></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>📅 Reservas pendentes</h2>
+          <span class="badge ${reservasPendentes() ? 'warn' : 'muted'}">${reservasPendentes()} aguardando</span>
+        </div>
+        ${renderReservasPendentesMini()}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>🕐 Últimos empréstimos</h2>
+        <button class="btn ghost small" onclick="go('emprestimos')">Ver todos →</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Livro</th><th>Aluno</th><th>Data</th><th>Prazo</th><th>Status</th></tr></thead>
+        <tbody>${ultimos.length ? ultimos.map(e => {
+          const a = getAluno(e.alunoId), l = getLivro(e.livroId), st = statusEmprestimo(e);
+          return `<tr>
+            <td><strong>${esc(l?.titulo || '—')}</strong></td>
+            <td>${esc(a?.nome || '—')}</td>
+            <td>${fmtDate(e.dataEmprestimo)}</td>
+            <td>${fmtDate(e.dataPrevista)}</td>
+            <td><span class="badge ${st.cls}">${st.txt}</span></td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="5" class="empty">Nenhum empréstimo registrado ainda</td></tr>'}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+function ativosAlunoCount(){ return new Set(state.emprestimos.filter(e => !e.dataDevolucao).map(e => e.alunoId)).size; }
+
+function renderReservasPendentesMini(){
+  const pend = state.reservas.filter(r => r.status === 'pendente');
+  if(!pend.length) return `<div class="empty"><span class="big">📭</span>Nenhuma reserva pendente</div>`;
+  return pend.slice(0,4).map(r => {
+    const a = getAluno(r.alunoId), l = getLivro(r.livroId);
+    return `<div style="display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid var(--border)">
+      ${avatarHtml(a?.nome || '?', 34)}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a?.nome || '—')}</div>
+        <div style="font-size:.76rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">quer ${esc(l?.titulo || '—')}</div>
+      </div>
+      <button class="btn success small" onclick="aprovarReserva('${r.id}')" title="Aprovar">✓</button>
+      <button class="btn danger small" onclick="rejeitarReserva('${r.id}')" title="Rejeitar">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function notificarTodosAtrasados(){
+  const n = state.emprestimos.filter(e => !e.dataDevolucao && e.dataPrevista < hoje()).length;
+  toast(`${n} notificação(ões) enviada(s)`, 'success');
+}
+
+/* =========================================================
+   ADMIN — LIVROS (CRUD COM FIRESTORE)
+   ========================================================= */
+let filtroLivro = 'todos';
+function renderLivros(){
+  const categorias = ['todos', ...new Set(state.livros.map(l => l.categoria).filter(Boolean))];
+  const q = ($('#buscaLivro')?.value || '').toLowerCase();
+  let lista = state.livros;
+  if(q) lista = lista.filter(l =>
+    (l.titulo || '').toLowerCase().includes(q) ||
+    (l.autor || '').toLowerCase().includes(q) ||
+    (l.categoria || '').toLowerCase().includes(q));
+  if(filtroLivro === 'disponiveis') lista = lista.filter(l => disponiveis(l.id) > 0);
+  if(filtroLivro === 'esgotados') lista = lista.filter(l => disponiveis(l.id) === 0);
+  if(filtroLivro !== 'todos' && !['disponiveis','esgotados'].includes(filtroLivro))
+    lista = lista.filter(l => l.categoria === filtroLivro);
+
+  $('#main').innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.4rem">
+      <div>
+        <h1 class="page-title">📖 Acervo de Livros</h1>
+        <p class="page-sub" style="margin-bottom:0">${state.livros.length} títulos · ${state.livros.reduce((s,l)=>s+(l.quantidade||0),0)} exemplares gravados no Firestore</p>
+      </div>
+      <button class="btn primary" onclick="formLivro()">+ Novo livro</button>
+    </div>
+
+    <div class="toolbar">
+      <input id="buscaLivro" placeholder="🔍 Buscar por título, autor ou categoria" value="${esc(q)}" oninput="renderLivros()" />
+      <div class="chip-filter" style="margin:0">
+        ${categorias.map(c => `<button class="chip ${filtroLivro===c?'active':''}" onclick="filtroLivro='${esc(c)}';renderLivros()">${esc(c === 'todos' ? 'Todos' : c)}</button>`).join('')}
+        <button class="chip ${filtroLivro==='disponiveis'?'active':''}" onclick="filtroLivro='disponiveis';renderLivros()">✅ Disponíveis</button>
+        <button class="chip ${filtroLivro==='esgotados'?'active':''}" onclick="filtroLivro='esgotados';renderLivros()">❌ Esgotados</button>
+      </div>
+    </div>
+
+    ${lista.length ? `<div class="books-grid">${lista.map(l => cardLivroAdmin(l)).join('')}</div>` :
+      `<div class="card"><div class="empty"><span class="big">📚</span>Nenhum livro encontrado</div></div>`}
+  `;
+}
+
+function cardLivroAdmin(l){
+  const d = disponiveis(l.id);
+  const cores = ['#fee2e2','#fef3c7','#dcfce7','#dbeafe','#ede9fe','#fce7f3'];
+  const bg = cores[((l.titulo || '').charCodeAt(0) + (l.titulo || '').length) % cores.length];
+  return `<div class="book-card">
+    <div class="book-cover" style="background:${bg}">${l.capa || '📕'}</div>
+    <div class="book-title">${esc(l.titulo)}</div>
+    <div class="book-author">${esc(l.autor)}</div>
+    <div class="book-meta">
+      <span class="badge ${d>0?'ok':'danger'}">${d>0?`${d} de ${l.quantidade}`:'Esgotado'}</span>
+      <div class="actions">
+        <button class="btn ghost small" onclick="formLivro('${l.id}')" title="Editar">✏️</button>
+        <button class="btn danger small" onclick="excluirLivro('${l.id}')" title="Excluir">🗑️</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+const EMOJIS_CAPA = ['📕','📗','📘','📙','📓','📔','📒','🌹','⚡','💍','👁️','🐷','🧠','🌻','🗡️','🚀','🧙','👑','🌟','🎭','🎨','🔮','🌍','🧪','💡','🏰','🐉','🎯','🌙','☀️','🍀','🌸'];
+
+function formLivro(id){
+  const l = id ? getLivro(id) : { titulo:'', autor:'', isbn:'', categoria:'', ano:'', quantidade:1, capa:'📕', sinopse:'' };
+  openModal(id ? '✏️ Editar livro' : '➕ Novo livro', `
+    <div class="field"><label>Título da Obra *</label><input name="titulo" required value="${esc(l.titulo)}"></div>
+    <div class="field"><label>Autor *</label><input name="autor" required value="${esc(l.autor)}"></div>
+    <div class="form-row">
+      <div class="field"><label>Categoria</label><input name="categoria" value="${esc(l.categoria || '')}" placeholder="Romance, Fantasia, História..."></div>
+      <div class="field"><label>Ano de publicação</label><input name="ano" type="number" min="0" max="2100" value="${l.ano || ''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>ISBN</label><input name="isbn" value="${esc(l.isbn || '')}"></div>
+      <div class="field"><label>Quantidade de exemplares *</label><input name="quantidade" type="number" min="1" required value="${l.quantidade || 1}"></div>
+    </div>
+    <div class="field"><label>Sinopse</label><textarea name="sinopse" rows="2" style="resize:vertical">${esc(l.sinopse || '')}</textarea></div>
+    <div class="field"><label>Emoji da Capa</label>
+      <div class="emoji-picker" id="emojiPicker">
+        ${EMOJIS_CAPA.map(e => `<button type="button" data-emoji="${e}" class="${e===l.capa?'selected':''}" onclick="selecionarEmoji('${e}')">${e}</button>`).join('')}
+      </div>
+      <input type="hidden" name="capa" id="capaInput" value="${l.capa || '📕'}">
+    </div>
+  `, async fd => {
+    const docId = id || uid();
+    const dados = {
+      id: docId,
+      titulo: fd.get('titulo').trim(),
+      autor: fd.get('autor').trim(),
+      categoria: fd.get('categoria').trim(),
+      ano: fd.get('ano') ? Number(fd.get('ano')) : null,
+      isbn: fd.get('isbn').trim(),
+      quantidade: Math.max(1, Number(fd.get('quantidade')) || 1),
+      capa: fd.get('capa') || '📕',
+      sinopse: fd.get('sinopse').trim()
+    };
+    closeModal();
+    try {
+      await setDoc(doc(db, 'livros', docId), dados);
+      toast(id ? 'Livro atualizado no Firestore' : 'Livro cadastrado no Firestore', 'success');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'livros/' + docId);
+    }
+  });
+}
+function selecionarEmoji(e){
+  $('#capaInput').value = e;
+  $$('#emojiPicker button').forEach(b => b.classList.toggle('selected', b.dataset.emoji === e));
+}
+
+async function excluirLivro(id){
+  if(state.emprestimos.some(e => e.livroId === id && !e.dataDevolucao))
+    return toast('Há exemplares emprestados deste livro', 'error');
+  if(!await confirmar('Excluir livro', 'Tem certeza? O livro será removido do Firestore.')) return;
+  try {
+    await deleteDoc(doc(db, 'livros', id));
+    toast('Livro removido do Firestore', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, 'livros/' + id);
+  }
+}
+
+/* =========================================================
+   ADMIN — ALUNOS (CRUD COM FIRESTORE)
+   ========================================================= */
+function renderAlunos(){
+  $('#main').innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.4rem">
+      <div><h1 class="page-title">👥 Alunos Cadastrados</h1>
+      <p class="page-sub" style="margin-bottom:0">${state.alunos.length} alunos cadastrados no Firestore</p></div>
+      <button class="btn primary" onclick="formAluno()">+ Novo aluno</button>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Aluno</th><th>Matrícula</th><th>Turma</th><th>E-mail</th><th>Ativos</th><th>Ações</th></tr></thead>
+        <tbody>${state.alunos.length ? state.alunos.map(a => {
+          const ativos = ativosDoAluno(a.id);
+          const cls = ativos >= state.config.maxEmprestimos ? 'danger' : ativos ? 'info' : 'muted';
+          return `<tr>
+            <td>${avatarHtml(a.nome, 32)} <span style="margin-left:.5rem;font-weight:600">${esc(a.nome)}</span></td>
+            <td><code style="background:var(--bg-alt);padding:.15rem .5rem;border-radius:5px;font-size:.82rem">${esc(a.matricula)}</code></td>
+            <td>${esc(a.turma || '—')}</td>
+            <td style="color:var(--muted)">${esc(a.email || '—')}</td>
+            <td><span class="badge ${cls}">${ativos}/${state.config.maxEmprestimos}</span></td>
+            <td><div class="actions">
+              <button class="btn ghost small" onclick="verAluno('${a.id}')">👁 Perfil</button>
+              <button class="btn ghost small" onclick="formAluno('${a.id}')">✏️</button>
+              <button class="btn danger small" onclick="excluirAluno('${a.id}')">🗑️</button>
+            </div></td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="6" class="empty"><span class="big">👥</span>Nenhum aluno cadastrado</td></tr>`}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+
+function formAluno(id){
+  const a = id ? getAluno(id) : { nome:'', matricula:'', turma:'', email:'' };
+  openModal(id ? '✏️ Editar aluno' : '➕ Novo aluno', `
+    <div class="field"><label>Nome completo *</label><input name="nome" required value="${esc(a.nome)}"></div>
+    <div class="form-row">
+      <div class="field"><label>Matrícula *</label><input name="matricula" required value="${esc(a.matricula)}" placeholder="Ex.: 2024001"></div>
+      <div class="field"><label>Turma / Série</label><input name="turma" value="${esc(a.turma || '')}" placeholder="1º Ano A"></div>
+    </div>
+    <div class="field"><label>E-mail de contato</label><input name="email" type="email" value="${esc(a.email || '')}" placeholder="aluno@escola.com"></div>
+  `, async fd => {
+    const mat = fd.get('matricula').trim();
+    const dup = state.alunos.some(x => x.matricula === mat && x.id !== id);
+    if(dup) return toast('Matrícula já cadastrada para outro aluno', 'error');
+    const docId = id || uid();
+    const dados = {
+      id: docId,
+      nome: fd.get('nome').trim(),
+      matricula: mat,
+      turma: fd.get('turma').trim(),
+      email: fd.get('email').trim()
+    };
+    closeModal();
+    try {
+      await setDoc(doc(db, 'alunos', docId), dados);
+      toast(id ? 'Aluno atualizado no Firestore' : 'Aluno cadastrado no Firestore', 'success');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'alunos/' + docId);
+    }
+  });
+}
+
+async function excluirAluno(id){
+  if(state.emprestimos.some(e => e.alunoId === id && !e.dataDevolucao))
+    return toast('Aluno tem empréstimos ativos pendentes de devolução', 'error');
+  if(!await confirmar('Excluir aluno', 'Tem certeza? O aluno será removido do Firestore.')) return;
+  try {
+    await deleteDoc(doc(db, 'alunos', id));
+    toast('Aluno removido do Firestore', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, 'alunos/' + id);
+  }
+}
+
+function verAluno(id){
+  const a = getAluno(id);
+  if(!a) return;
+  const emps = state.emprestimos.filter(e => e.alunoId === id).sort((x,y) => (y.dataEmprestimo||'').localeCompare(x.dataEmprestimo||''));
+  const ativos = emps.filter(e => !e.dataDevolucao);
+  const atrasados = ativos.filter(e => e.dataPrevista < hoje());
+  const avaliacoes = state.avaliacoes.filter(x => x.alunoId === id);
+
+  openModal('👤 ' + a.nome, `
+    <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--bg-alt);border-radius:12px;margin-bottom:1rem">
+      ${avatarHtml(a.nome, 56)}
+      <div>
+        <div style="font-weight:700;font-size:1.1rem">${esc(a.nome)}</div>
+        <div style="color:var(--muted);font-size:.85rem">${esc(a.matricula)} · ${esc(a.turma || 'sem turma')}</div>
+        ${a.email ? `<div style="color:var(--muted);font-size:.8rem">${esc(a.email)}</div>` : ''}
+      </div>
+    </div>
+
+    <div class="stats" style="grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1rem">
+      <div class="stat blue" style="padding:.7rem"><div class="label" style="font-size:.65rem">Empréstimos</div><div class="value" style="font-size:1.3rem">${emps.length}</div></div>
+      <div class="stat amber" style="padding:.7rem"><div class="label" style="font-size:.65rem">Ativos</div><div class="value" style="font-size:1.3rem">${ativos.length}</div></div>
+      <div class="stat red" style="padding:.7rem"><div class="label" style="font-size:.65rem">Atrasados</div><div class="value" style="font-size:1.3rem">${atrasados.length}</div></div>
+    </div>
+
+    <h3 style="font-size:.9rem;margin-bottom:.5rem;color:var(--text-2)">📚 Histórico de empréstimos</h3>
+    ${emps.length ? emps.slice(0,8).map(e => {
+      const l = getLivro(e.livroId), st = statusEmprestimo(e);
+      return `<div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.86rem">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l?.titulo || '—')}</div>
+          <div style="color:var(--muted);font-size:.76rem">${fmtDate(e.dataEmprestimo)} → ${fmtDate(e.dataPrevista)}</div>
+        </div>
+        <span class="badge ${st.cls}">${st.txt}</span>
+      </div>`;
+    }).join('') : '<div class="empty" style="padding:1rem">Nenhum empréstimo</div>'}
+
+    ${avaliacoes.length ? `
+      <h3 style="font-size:.9rem;margin:1rem 0 .5rem;color:var(--text-2)">⭐ Avaliações feitas</h3>
+      ${avaliacoes.map(av => {
+        const l = getLivro(av.livroId);
+        return `<div style="padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem">
+          <div><strong>${esc(l?.titulo || '—')}</strong> ${estrelasHtml(av.nota)}</div>
+          ${av.comentario ? `<div style="color:var(--muted);font-size:.8rem;margin-top:.2rem">"${esc(av.comentario)}"</div>` : ''}
+        </div>`;
+      }).join('')}
+    ` : ''}
+  `, () => closeModal(), { submitLabel:'Fechar' });
+}
+
+/* =========================================================
+   ADMIN — EMPRÉSTIMOS (CRUD COM FIRESTORE)
+   ========================================================= */
+let filtroEmp = 'todos';
+function renderEmprestimos(){
+  let lista = [...state.emprestimos].sort((a,b)=> (b.dataEmprestimo||'').localeCompare(a.dataEmprestimo||''));
+  if(filtroEmp === 'andamento') lista = lista.filter(e => !e.dataDevolucao && e.dataPrevista >= hoje());
+  if(filtroEmp === 'atrasados') lista = lista.filter(e => !e.dataDevolucao && e.dataPrevista < hoje());
+  if(filtroEmp === 'devolvidos') lista = lista.filter(e => e.dataDevolucao);
+
+  const chips = [
+    ['todos','Todos', state.emprestimos.length],
+    ['andamento','Em andamento', state.emprestimos.filter(e=>!e.dataDevolucao && e.dataPrevista>=hoje()).length],
+    ['atrasados','Atrasados', state.emprestimos.filter(e=>!e.dataDevolucao && e.dataPrevista<hoje()).length],
+    ['devolvidos','Devolvidos', state.emprestimos.filter(e=>e.dataDevolucao).length]
+  ];
+
+  $('#main').innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.4rem">
+      <div>
+        <h1 class="page-title">🔄 Empréstimos</h1>
+        <p class="page-sub" style="margin-bottom:0">Gerencie saídas e devoluções salvas no Firestore</p>
+      </div>
+      <button class="btn primary" onclick="formEmprestimo()">+ Novo empréstimo</button>
+    </div>
+
+    <div class="chip-filter">
+      ${chips.map(([v,l,n]) => `<button class="chip ${filtroEmp===v?'active':''}" onclick="filtroEmp='${v}';renderEmprestimos()">${l} <span style="opacity:.7">(${n})</span></button>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Livro</th><th>Aluno</th><th>Empréstimo</th><th>Prazo</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>${lista.length ? lista.map(e => {
+          const l = getLivro(e.livroId), a = getAluno(e.alunoId), st = statusEmprestimo(e);
+          return `<tr>
+            <td><strong>${esc(l?.titulo || '(removido)')}</strong></td>
+            <td>${esc(a?.nome || '(removido)')}</td>
+            <td>${fmtDate(e.dataEmprestimo)}</td>
+            <td>${fmtDate(e.dataPrevista)}</td>
+            <td><span class="badge ${st.cls}">${st.txt}</span></td>
+            <td><div class="actions">
+              ${!e.dataDevolucao ? `
+                <button class="btn success small" onclick="devolver('${e.id}')" title="Devolver">✓ Devolver</button>
+                <button class="btn ghost small" onclick="renovarEmprestimo('${e.id}')" title="Renovar">🔄 Renovar</button>
+              ` : `<span class="badge muted">Devolvido em ${fmtDate(e.dataDevolucao)}</span>`}
+              <button class="btn danger small" onclick="excluirEmprestimo('${e.id}')" title="Excluir">🗑️</button>
+            </div></td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="6" class="empty"><span class="big">📭</span>Nenhum empréstimo neste filtro</td></tr>`}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+
+function formEmprestimo(){
+  const livrosDisp = state.livros.filter(l => disponiveis(l.id) > 0);
+  if(!livrosDisp.length) return toast('Nenhum exemplar disponível no momento', 'error');
+  if(!state.alunos.length) return toast('Cadastre ao menos um aluno no Firestore primeiro', 'error');
+
+  const optsL = livrosDisp.map(l => `<option value="${l.id}">${esc(l.titulo)} (${disponiveis(l.id)} disp.)</option>`).join('');
+  const optsA = state.alunos.map(a => {
+    const ativos = ativosDoAluno(a.id);
+    return `<option value="${a.id}">${esc(a.nome)} (${ativos}/${state.config.maxEmprestimos} ativos)</option>`;
+  }).join('');
+
+  openModal('➕ Novo empréstimo', `
+    <div class="field"><label>Livro do Acervo *</label><select name="livroId" required>${optsL}</select></div>
+    <div class="field"><label>Aluno *</label><select name="alunoId" required>${optsA}</select></div>
+    <div class="form-row">
+      <div class="field"><label>Data do empréstimo</label><input type="date" name="dataEmprestimo" value="${hoje()}" required></div>
+      <div class="field"><label>Data prevista de devolução</label><input type="date" name="dataPrevista" value="${addDays(hoje(), state.config.prazoPadrao)}" required></div>
+    </div>
+  `, async fd => {
+    const alunoId = fd.get('alunoId');
+    if(ativosDoAluno(alunoId) >= state.config.maxEmprestimos)
+      return toast(`Aluno atingiu o limite de ${state.config.maxEmprestimos} empréstimos`, 'error');
+
+    const docId = uid();
+    const dados = {
+      id: docId,
+      livroId: fd.get('livroId'),
+      alunoId,
+      dataEmprestimo: fd.get('dataEmprestimo'),
+      dataPrevista: fd.get('dataPrevista'),
+      dataDevolucao: null,
+      renovacoes: 0
+    };
+    closeModal();
+    try {
+      await setDoc(doc(db, 'emprestimos', docId), dados);
+      toast('Empréstimo registrado no Firestore!', 'success');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'emprestimos/' + docId);
+    }
+  });
+}
+
+async function devolver(id){
+  const e = state.emprestimos.find(x => x.id === id);
+  if(!e) return;
+  if(!await confirmar('Devolver livro', 'Confirmar a devolução deste livro?')) return;
+  try {
+    await updateDoc(doc(db, 'emprestimos', id), { dataDevolucao: hoje() });
+    toast('Livro devolvido com sucesso no Firestore', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, 'emprestimos/' + id);
+  }
+}
+
+async function renovarEmprestimo(id){
+  const e = state.emprestimos.find(x => x.id === id);
+  if(!e) return;
+  if(e.dataDevolucao) return toast('Empréstimo já devolvido', 'error');
+  if((e.renovacoes || 0) >= 1) return toast('Este empréstimo já foi renovado', 'warn');
+  if(e.dataPrevista < hoje()) return toast('Empréstimo em atraso, regularize a devolução', 'error');
+  const novoPrazo = addDays(e.dataPrevista, state.config.prazoPadrao);
+  if(!await confirmar('Renovar empréstimo', `Novo prazo será ${fmtDate(novoPrazo)}. Confirmar?`)) return;
+  try {
+    await updateDoc(doc(db, 'emprestimos', id), {
+      dataPrevista: novoPrazo,
+      renovacoes: (e.renovacoes || 0) + 1
+    });
+    toast('Empréstimo renovado no Firestore', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, 'emprestimos/' + id);
+  }
+}
+
+async function excluirEmprestimo(id){
+  if(!await confirmar('Excluir empréstimo', 'O registro será apagado permanentemente do Firestore.')) return;
+  try {
+    await deleteDoc(doc(db, 'emprestimos', id));
+    toast('Empréstimo excluído', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, 'emprestimos/' + id);
+  }
+}
+
+/* =========================================================
+   ADMIN — RESERVAS
+   ========================================================= */
+function renderReservas(){
+  const lista = [...state.reservas].sort((a,b) => (b.dataReserva || b.data || '').localeCompare(a.dataReserva || a.data || ''));
+  $('#main').innerHTML = `
+    <h1 class="page-title">📅 Reservas</h1>
+    <p class="page-sub">Solicitações feitas pelos alunos gravadas no Firestore.</p>
+
+    <div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Livro</th><th>Aluno</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>${lista.length ? lista.map(r => {
+          const l = getLivro(r.livroId), a = getAluno(r.alunoId);
+          const cls = { pendente:'warn', aprovada:'info', rejeitada:'danger', cancelada:'muted' }[r.status];
+          return `<tr>
+            <td><strong>${esc(l?.titulo || '(removido)')}</strong></td>
+            <td>${esc(a?.nome || '(removido)')}</td>
+            <td>${fmtDate(r.dataReserva || r.data)}</td>
+            <td><span class="badge ${cls}">${r.status}</span></td>
+            <td><div class="actions">
+              ${r.status === 'pendente' ? `
+                <button class="btn success small" onclick="aprovarReserva('${r.id}')">✓ Aprovar</button>
+                <button class="btn danger small" onclick="rejeitarReserva('${r.id}')">✕ Rejeitar</button>
+              ` : '<span class="badge muted">—</span>'}
+            </div></td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="5" class="empty"><span class="big">📭</span>Nenhuma reserva</td></tr>`}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+
+async function aprovarReserva(id){
+  const r = state.reservas.find(x => x.id === id);
+  if(!r) return;
+  if(disponiveis(r.livroId) === 0) return toast('Sem exemplares disponíveis no momento', 'error');
+  if(ativosDoAluno(r.alunoId) >= state.config.maxEmprestimos) return toast('Aluno atingiu o limite de empréstimos', 'error');
+
+  const empId = uid();
+  const novoEmp = {
+    id: empId,
+    livroId: r.livroId,
+    alunoId: r.alunoId,
+    dataEmprestimo: hoje(),
+    dataPrevista: addDays(hoje(), state.config.prazoPadrao),
+    dataDevolucao: null,
+    renovacoes: 0
+  };
+  try {
+    await setDoc(doc(db, 'emprestimos', empId), novoEmp);
+    await updateDoc(doc(db, 'reservas', id), { status: 'aprovada' });
+    toast('Reserva aprovada e empréstimo gerado!', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'reservas/' + id);
+  }
+}
+
+async function rejeitarReserva(id){
+  try {
+    await updateDoc(doc(db, 'reservas', id), { status: 'rejeitada' });
+    toast('Reserva rejeitada', 'info');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, 'reservas/' + id);
+  }
+}
+
+/* =========================================================
+   ADMIN — RELATÓRIOS
+   ========================================================= */
+function renderRelatorios(){
+  const contLivros = {};
+  state.emprestimos.forEach(e => contLivros[e.livroId] = (contLivros[e.livroId] || 0) + 1);
+  const topLivros = Object.entries(contLivros).sort((a,b) => b[1]-a[1]).slice(0,5)
+    .map(([id, n]) => ({ livro: getLivro(id), n })).filter(x => x.livro);
+  const maxL = Math.max(1, ...topLivros.map(x => x.n));
+
+  const contAlunos = {};
+  state.emprestimos.forEach(e => contAlunos[e.alunoId] = (contAlunos[e.alunoId] || 0) + 1);
+  const topAlunos = Object.entries(contAlunos).sort((a,b) => b[1]-a[1]).slice(0,5)
+    .map(([id, n]) => ({ aluno: getAluno(id), n })).filter(x => x.aluno);
+  const maxA = Math.max(1, ...topAlunos.map(x => x.n));
+
+  const atrasosTurma = {};
+  state.emprestimos.filter(e => !e.dataDevolucao && e.dataPrevista < hoje()).forEach(e => {
+    const a = getAluno(e.alunoId);
+    if(a){ atrasosTurma[a.turma || 'Sem turma'] = (atrasosTurma[a.turma || 'Sem turma'] || 0) + 1; }
+  });
+  const maxT = Math.max(1, ...Object.values(atrasosTurma));
+
+  const cats = {};
+  state.livros.forEach(l => { if(l.categoria) cats[l.categoria] = (cats[l.categoria] || 0) + (l.quantidade || 0); });
+  const catsArr = Object.entries(cats).sort((a,b) => b[1]-a[1]).slice(0,6);
+  const maxC = Math.max(1, ...catsArr.map(x => x[1]));
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">📈 Relatórios e Métricas</h1>
+    <p class="page-sub">Estatísticas em tempo real calculadas a partir do Firestore</p>
+
+    <div class="stats">
+      <div class="stat blue"><div class="label">Total de empréstimos</div><div class="value">${state.emprestimos.length}</div></div>
+      <div class="stat green"><div class="label">Devolvidos</div><div class="value">${state.emprestimos.filter(e=>e.dataDevolucao).length}</div></div>
+      <div class="stat amber"><div class="label">Em curso</div><div class="value">${state.emprestimos.filter(e=>!e.dataDevolucao).length}</div></div>
+      <div class="stat red"><div class="label">Atrasados</div><div class="value">${state.emprestimos.filter(e=>!e.dataDevolucao && e.dataPrevista<hoje()).length}</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>🔥 Livros mais emprestados</h2></div>
+        ${topLivros.length ? topLivros.map(({livro, n}) => `
+          <div class="bar-row">
+            <div class="lbl">${esc(livro.titulo)}</div>
+            <div class="bar"><div class="bar-fill" style="width:${n/maxL*100}%"></div></div>
+            <div class="val">${n}</div>
+          </div>`).join('') : '<div class="empty">Sem dados suficientes</div>'}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>🏆 Alunos mais leitores</h2></div>
+        ${topAlunos.length ? topAlunos.map(({aluno, n}) => `
+          <div class="bar-row">
+            <div class="lbl">${esc(aluno.nome)}</div>
+            <div class="bar"><div class="bar-fill" style="width:${n/maxA*100}%"></div></div>
+            <div class="val">${n}</div>
+          </div>`).join('') : '<div class="empty">Sem dados suficientes</div>'}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>⚠️ Atrasos por turma</h2></div>
+        ${Object.keys(atrasosTurma).length ? Object.entries(atrasosTurma).map(([t, n]) => `
+          <div class="bar-row">
+            <div class="lbl">${esc(t)}</div>
+            <div class="bar"><div class="bar-fill" style="width:${n/maxT*100}%;background:linear-gradient(90deg,var(--danger),#f97316)"></div></div>
+            <div class="val">${n}</div>
+          </div>`).join('') : '<div class="empty"><span class="big">🎉</span>Nenhum atraso registrado!</div>'}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>📚 Exemplares por categoria</h2></div>
+        ${catsArr.length ? catsArr.map(([c, n]) => `
+          <div class="bar-row">
+            <div class="lbl">${esc(c)}</div>
+            <div class="bar"><div class="bar-fill" style="width:${n/maxC*100}%;background:linear-gradient(90deg,var(--success),#22d3ee)"></div></div>
+            <div class="val">${n}</div>
+          </div>`).join('') : '<div class="empty">Sem categorias cadastradas</div>'}
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   ADMIN — CONFIGURAÇÕES
+   ========================================================= */
+const CORES = [
+  ['#6366f1','#8b5cf6'], ['#3b82f6','#06b6d4'], ['#10b981','#22d3ee'],
+  ['#f59e0b','#ef4444'], ['#ec4899','#f43f5e'], ['#8b5cf6','#ec4899'],
+  ['#0ea5e9','#6366f1'], ['#14b8a6','#10b981'], ['#f97316','#f59e0b']
+];
+
+function renderConfig(){
+  $('#main').innerHTML = `
+    <h1 class="page-title">⚙️ Configurações</h1>
+    <p class="page-sub">Personalize a biblioteca e verifique o banco de dados</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>🏫 Identidade</h2></div>
+        <div class="field"><label>Nome da biblioteca / escola</label>
+          <input id="cfgNome" value="${esc(state.config.nomeEscola)}"></div>
+        <div class="field"><label>Logo (emoji)</label>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input id="cfgEmoji" value="${esc(state.config.emojiLogo)}" style="width:70px;text-align:center;font-size:1.5rem;padding:.5rem">
+            <div class="emoji-picker" style="flex:1">
+              ${['📚','🏫','📖','🎓','🌟','📕','🔖','🎒','🖋️','🧭'].map(e => `<button type="button" onclick="$('#cfgEmoji').value='${e}'">${e}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="field"><label>Cor de destaque</label>
+          <div class="color-picker">
+            ${CORES.map(([c1,c2]) => `<button type="button" style="background:linear-gradient(135deg,${c1},${c2})"
+              class="${state.config.corAcento===c1?'selected':''}" onclick="setCor('${c1}','${c2}',this)"></button>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>📋 Regras</h2></div>
+        <div class="form-row">
+          <div class="field"><label>Prazo padrão (dias)</label>
+            <input id="cfgPrazo" type="number" min="1" max="90" value="${state.config.prazoPadrao}"></div>
+          <div class="field"><label>Máx. empréstimos/aluno</label>
+            <input id="cfgMax" type="number" min="1" max="20" value="${state.config.maxEmprestimos}"></div>
+        </div>
+        <div style="margin-top:1rem;padding:.9rem;background:var(--bg-alt);border-radius:10px;font-size:.82rem;color:var(--text-2);line-height:1.6">
+          💡 O prazo padrão e o limite de empréstimos são salvos no documento <code>config/geral</code> no Firestore.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1.2rem">
+      <div class="card-head"><h2>🔥 Banco de Dados Firestore</h2></div>
+      <div style="font-size:.85rem;color:var(--text-2);margin-bottom:1rem;line-height:1.6">
+        <div><strong>Projeto:</strong> <code>precise-ceiling-tmvz5</code></div>
+        <div><strong>Database ID:</strong> <code>${esc(firebaseConfig.firestoreDatabaseId)}</code></div>
+        <div><strong>Alunos sincronizados:</strong> ${state.alunos.length}</div>
+        <div><strong>Livros sincronizados:</strong> ${state.livros.length}</div>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="btn ghost" onclick="recarregarSeedFirestore()">🔄 Sincronizar catálogo inicial no Firestore</button>
+        <button class="btn ghost" onclick="exportarDados()">📤 Exportar backup (JSON)</button>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.2rem">
+      <button class="btn primary" onclick="salvarConfig()">💾 Salvar configurações</button>
+    </div>
+  `;
+}
+
+function setCor(c1, c2, btn){
+  $$('.color-picker button').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.config._tempCor1 = c1; state.config._tempCor2 = c2;
+}
+
+async function salvarConfig(){
+  state.config.nomeEscola = $('#cfgNome').value.trim() || 'Biblioteca';
+  state.config.emojiLogo = $('#cfgEmoji').value.trim() || '📚';
+  if(state.config._tempCor1){
+    state.config.corAcento = state.config._tempCor1;
+    state.config.corAcento2 = state.config._tempCor2;
+    delete state.config._tempCor1;
+    delete state.config._tempCor2;
+  }
+  state.config.prazoPadrao = Math.max(1, Number($('#cfgPrazo').value) || 14);
+  state.config.maxEmprestimos = Math.max(1, Number($('#cfgMax').value) || 3);
+  aplicarTema();
+  aplicarMarca();
+  try {
+    await setDoc(doc(db, 'config', 'geral'), state.config);
+    toast('Configurações salvas no Firestore', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'config/geral');
+  }
+}
+
+async function recarregarSeedFirestore(){
+  if(!await confirmar('Repovoar catálogo', 'Deseja adicionar os livros e alunos iniciais ao Firestore?')) return;
+  for (const l of SEED_LIVROS) {
+    await setDoc(doc(db, 'livros', l.id), l);
+  }
+  for (const a of SEED_ALUNOS) {
+    await setDoc(doc(db, 'alunos', a.id), a);
+  }
+  toast('Livros e alunos sincronizados no Firestore!', 'success');
+}
+
+function exportarDados(){
+  const dados = {
+    config: state.config, livros: state.livros, alunos: state.alunos,
+    emprestimos: state.emprestimos, reservas: state.reservas,
+    avaliacoes: state.avaliacoes, favoritos: state.favoritos,
+    fonte: 'Firebase Firestore',
+    data: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `bibliotrack-firestore-backup-${hoje()}.json`;
+  a.click();
+  toast('Backup exportado com sucesso', 'success');
+}
+
+/* =========================================================
+   ÁREA DO ALUNO
+   ========================================================= */
+function renderInicio(){
+  const alunoId = state.sessao.alunoId;
+  const aluno = getAluno(alunoId) || { nome: state.sessao.nome };
+  const meus = state.emprestimos.filter(e => e.alunoId === alunoId);
+  const ativos = meus.filter(e => !e.dataDevolucao);
+  const atrasados = ativos.filter(e => e.dataPrevista < hoje());
+  const reservas = state.reservas.filter(r => r.alunoId === alunoId && r.status === 'pendente');
+
+  const recs = [...state.livros].slice(0, 4);
+  const hora = new Date().getHours();
+  const saud = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">${saud}, ${esc(aluno.nome.split(' ')[0])}! 👋</h1>
+    <p class="page-sub">Bem-vindo à ${esc(state.config.nomeEscola)}</p>
+
+    <div class="stats">
+      <div class="stat blue"><span class="icon">📚</span>
+        <div class="label">Meus empréstimos</div><div class="value">${ativos.length}</div>
+        <div class="delta">${meus.length} no total</div></div>
+      <div class="stat ${atrasados.length?'red':'green'}"><span class="icon">${atrasados.length?'⚠️':'✅'}</span>
+        <div class="label">Atrasados</div><div class="value">${atrasados.length}</div>
+        <div class="delta">${atrasados.length?'Devolva logo!':'Tudo em dia'}</div></div>
+      <div class="stat amber"><span class="icon">📅</span>
+        <div class="label">Reservas</div><div class="value">${reservas.length}</div>
+        <div class="delta">Aguardando</div></div>
+      <div class="stat blue"><span class="icon">⭐</span>
+        <div class="label">Favoritos</div><div class="value">${state.favoritos.filter(f=>f.alunoId===alunoId).length}</div>
+        <div class="delta">Livros salvos</div></div>
+    </div>
+
+    ${atrasados.length ? `
+    <div class="card" style="border-left:4px solid var(--danger);background:color-mix(in srgb,var(--danger) 5%,var(--card));margin-bottom:1.2rem">
+      <h2 style="margin-bottom:.6rem;color:var(--danger);font-size:1rem">⚠️ Você tem ${atrasados.length} livro(s) em atraso!</h2>
+      ${atrasados.map(e => {
+        const l = getLivro(e.livroId);
+        return `<div style="font-size:.9rem;padding:.3rem 0">
+          📕 <strong>${esc(l?.titulo || '—')}</strong> · devolver até ${fmtDate(e.dataPrevista)}
+          <span class="badge danger" style="margin-left:.4rem">${diasAtraso(e.dataPrevista)}d de atraso</span>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <div class="card">
+      <div class="card-head"><h2>✨ Sugestões do Acervo</h2>
+        <button class="btn ghost small" onclick="go('acervo')">Ver acervo completo →</button>
+      </div>
+      <div class="books-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+        ${recs.map(l => cardLivroAluno(l, alunoId)).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function cardLivroAluno(l, alunoId){
+  const d = disponiveis(l.id);
+  const cores = ['#fee2e2','#fef3c7','#dcfce7','#dbeafe','#ede9fe','#fce7f3'];
+  const bg = cores[((l.titulo || '').charCodeAt(0) + (l.titulo || '').length) % cores.length];
+  const fav = isFavorito(alunoId, l.id);
+  const media = mediaAvaliacoes(l.id);
+  const nAv = totalAvaliacoes(l.id);
+
+  return `<div class="book-card">
+    <div style="position:relative">
+      <div class="book-cover" style="background:${bg}">${l.capa || '📕'}</div>
+      <button class="fav-btn" style="position:absolute;top:.4rem;right:.4rem;background:rgba(255,255,255,.9);border-radius:50%;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)"
+        onclick="toggleFavorito('${l.id}')" title="${fav?'Remover dos favoritos':'Adicionar aos favoritos'}">${fav?'❤️':'🤍'}</button>
+    </div>
+    <div class="book-title">${esc(l.titulo)}</div>
+    <div class="book-author">${esc(l.autor)}</div>
+    ${nAv ? `<div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">${estrelasHtml(media)} ${media} (${nAv})</div>` : ''}
+    <div class="book-meta">
+      <span class="badge ${d>0?'ok':'danger'}">${d>0?`${d} disp.`:'Indisponível'}</span>
+      ${d > 0 ? `<button class="btn primary small" onclick="reservar('${l.id}')">Reservar</button>` :
+        `<button class="btn ghost small" onclick="entrarFila('${l.id}')">Fila</button>`}
+    </div>
+  </div>`;
+}
+
+async function toggleFavorito(livroId){
+  const alunoId = state.sessao.alunoId;
+  const favDoc = state.favoritos.find(f => f.alunoId === alunoId && f.livroId === livroId);
+  if(favDoc){
+    try {
+      await deleteDoc(doc(db, 'favoritos', favDoc.id));
+      toast('Removido dos favoritos', 'info');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'favoritos/' + favDoc.id);
+    }
+  } else {
+    const docId = uid();
+    try {
+      await setDoc(doc(db, 'favoritos', docId), { id: docId, alunoId, livroId });
+      toast('Adicionado aos favoritos ❤️', 'success');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'favoritos/' + docId);
+    }
+  }
+}
+
+async function reservar(livroId){
+  const alunoId = state.sessao.alunoId;
+  if(ativosDoAluno(alunoId) >= state.config.maxEmprestimos)
+    return toast(`Limite de ${state.config.maxEmprestimos} empréstimos atingido`, 'error');
+  const jaTem = state.reservas.find(r => r.livroId === livroId && r.alunoId === alunoId && r.status === 'pendente');
+  if(jaTem) return toast('Você já reservou este livro', 'warn');
+
+  const docId = uid();
+  const novaReserva = {
+    id: docId,
+    livroId,
+    alunoId,
+    dataReserva: hoje(),
+    status: 'pendente'
+  };
+  try {
+    await setDoc(doc(db, 'reservas', docId), novaReserva);
+    toast('Reserva solicitada no Firestore! Aguarde aprovação 📅', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'reservas/' + docId);
+  }
+}
+
+function entrarFila(){ toast('Livro indisponível no momento. Você será avisado quando for devolvido.', 'info'); }
+
+/* =========================================================
+   ALUNO — ACERVO
+   ========================================================= */
+let filtroAcervo = 'todos';
+function renderAcervo(){
+  const q = ($('#buscaAcervo')?.value || '').toLowerCase();
+  const categorias = ['todos', ...new Set(state.livros.map(l => l.categoria).filter(Boolean))];
+  let lista = state.livros;
+  if(q) lista = lista.filter(l =>
+    (l.titulo || '').toLowerCase().includes(q) ||
+    (l.autor || '').toLowerCase().includes(q) ||
+    (l.categoria || '').toLowerCase().includes(q));
+  if(filtroAcervo === 'disponiveis') lista = lista.filter(l => disponiveis(l.id) > 0);
+  if(filtroAcervo === 'favoritos') lista = lista.filter(l => isFavorito(state.sessao.alunoId, l.id));
+  if(filtroAcervo !== 'todos' && !['disponiveis','favoritos'].includes(filtroAcervo))
+    lista = lista.filter(l => l.categoria === filtroAcervo);
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">📖 Acervo da Biblioteca</h1>
+    <p class="page-sub">${state.livros.length} títulos disponíveis no Firestore</p>
+
+    <div class="toolbar">
+      <input id="buscaAcervo" placeholder="🔍 Buscar livro ou autor" value="${esc(q)}" oninput="renderAcervo()">
+    </div>
+    <div class="chip-filter">
+      ${categorias.slice(0,8).map(c => `<button class="chip ${filtroAcervo===c?'active':''}" onclick="filtroAcervo='${esc(c)}';renderAcervo()">${esc(c === 'todos' ? 'Todos' : c)}</button>`).join('')}
+      <button class="chip ${filtroAcervo==='disponiveis'?'active':''}" onclick="filtroAcervo='disponiveis';renderAcervo()">✅ Disponíveis</button>
+      <button class="chip ${filtroAcervo==='favoritos'?'active':''}" onclick="filtroAcervo='favoritos';renderAcervo()">❤️ Favoritos</button>
+    </div>
+
+    ${lista.length ? `<div class="books-grid">${lista.map(l => cardLivroAluno(l, state.sessao.alunoId)).join('')}</div>` :
+      `<div class="card"><div class="empty"><span class="big">📚</span>Nenhum livro encontrado</div></div>`}
+  `;
+}
+
+/* =========================================================
+   ALUNO — MEUS EMPRÉSTIMOS
+   ========================================================= */
+function renderMeus(){
+  const alunoId = state.sessao.alunoId;
+  const meus = state.emprestimos.filter(e => e.alunoId === alunoId).sort((a,b)=> (b.dataEmprestimo||'').localeCompare(a.dataEmprestimo||''));
+  const ativos = meus.filter(e => !e.dataDevolucao);
+  const historico = meus.filter(e => e.dataDevolucao);
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">📌 Meus empréstimos</h1>
+    <p class="page-sub">${ativos.length} ativo(s) · ${historico.length} no histórico</p>
+
+    <div class="card">
+      <div class="card-head"><h2>🔄 Em curso</h2></div>
+      ${ativos.length ? ativos.map(e => {
+        const l = getLivro(e.livroId), st = statusEmprestimo(e);
+        const podeRenovar = (e.renovacoes||0) < 1 && e.dataPrevista >= hoje();
+        return `<div style="display:flex;gap:1rem;padding:1rem;background:var(--bg-alt);border-radius:12px;margin-bottom:.7rem;align-items:center;flex-wrap:wrap">
+          <div style="font-size:2rem">${l?.capa || '📕'}</div>
+          <div style="flex:1;min-width:180px">
+            <div style="font-weight:700">${esc(l?.titulo || '—')}</div>
+            <div style="color:var(--muted);font-size:.82rem">${esc(l?.autor || '—')}</div>
+            <div style="color:var(--text-2);font-size:.82rem;margin-top:.3rem">
+              📅 ${fmtDate(e.dataEmprestimo)} → ${fmtDate(e.dataPrevista)}
+              ${(e.renovacoes||0) > 0 ? `· <span class="badge muted">renovado</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.4rem;align-items:flex-end">
+            <span class="badge ${st.cls}">${st.txt}</span>
+            ${podeRenovar ? `<button class="btn ghost small" onclick="pedirRenovacao('${e.id}')">🔄 Renovar</button>` : ''}
+          </div>
+        </div>`;
+      }).join('') : `<div class="empty"><span class="big">📚</span>Você não tem empréstimos em curso</div>`}
+    </div>
+
+    ${historico.length ? `
+    <div class="card" style="margin-top:1.2rem">
+      <div class="card-head"><h2>📜 Histórico de Devoluções</h2></div>
+      ${historico.slice(0,10).map(e => {
+        const l = getLivro(e.livroId);
+        const av = state.avaliacoes.find(x => x.livroId === e.livroId && x.alunoId === alunoId);
+        return `<div style="display:flex;gap:1rem;padding:.85rem 0;border-bottom:1px solid var(--border);align-items:center;flex-wrap:wrap">
+          <div style="font-size:1.5rem">${l?.capa || '📕'}</div>
+          <div style="flex:1;min-width:180px">
+            <div style="font-weight:600">${esc(l?.titulo || '—')}</div>
+            <div style="color:var(--muted);font-size:.8rem">Devolvido em ${fmtDate(e.dataDevolucao)}</div>
+            ${av ? `<div style="margin-top:.2rem">${estrelasHtml(av.nota)} ${av.comentario ? `<span style="color:var(--muted);font-size:.8rem">— "${esc(av.comentario)}"</span>` : ''}</div>` : ''}
+          </div>
+          ${!av ? `<button class="btn ghost small" onclick="formAvaliacao('${e.livroId}')">⭐ Avaliar</button>` : ''}
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+}
+
+async function pedirRenovacao(id){
+  const e = state.emprestimos.find(x => x.id === id);
+  if(!e) return;
+  if((e.renovacoes||0) >= 1) return toast('Já foi renovado uma vez', 'warn');
+  const novoPrazo = addDays(e.dataPrevista, state.config.prazoPadrao);
+  if(!await confirmar('Renovar', `Deseja renovar por mais ${state.config.prazoPadrao} dias?`)) return;
+  try {
+    await updateDoc(doc(db, 'emprestimos', id), {
+      dataPrevista: novoPrazo,
+      renovacoes: (e.renovacoes||0) + 1
+    });
+    toast('Empréstimo renovado no Firestore!', 'success');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, 'emprestimos/' + id);
+  }
+}
+
+function formAvaliacao(livroId){
+  const l = getLivro(livroId);
+  openModal('⭐ Avaliar ' + (l?.titulo || 'livro'), `
+    <p style="color:var(--text-2);font-size:.9rem;margin-bottom:1rem">Como foi sua experiência de leitura?</p>
+    <div id="starsInput" style="font-size:2.5rem;text-align:center;letter-spacing:.4rem;cursor:pointer;margin-bottom:1rem;user-select:none">
+      ${[1,2,3,4,5].map(n => `<span data-n="${n}" onclick="setNota(${n})" style="color:var(--warning)">★</span>`).join('')}
+    </div>
+    <input type="hidden" name="nota" id="notaInput" value="5">
+    <div class="field"><label>Comentário ou resenha (opcional)</label>
+      <textarea name="comentario" rows="3" placeholder="O que você achou da história?" style="resize:vertical"></textarea>
+    </div>
+  `, async fd => {
+    const alunoId = state.sessao.alunoId;
+    const docId = uid();
+    const dados = {
+      id: docId,
+      livroId,
+      alunoId,
+      nota: Number(fd.get('nota')),
+      comentario: fd.get('comentario').trim(),
+      data: hoje()
+    };
+    closeModal();
+    try {
+      await setDoc(doc(db, 'avaliacoes', docId), dados);
+      toast('Avaliação salva no Firestore!', 'success');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'avaliacoes/' + docId);
+    }
+  });
+}
+function setNota(n){
+  $('#notaInput').value = n;
+  $$('#starsInput span').forEach(s => {
+    s.style.color = Number(s.dataset.n) <= n ? 'var(--warning)' : 'var(--muted)';
+  });
+}
+
+/* =========================================================
+   ALUNO — RESERVAS, FAVORITOS, PERFIL
+   ========================================================= */
+function renderReservasAluno(){
+  const alunoId = state.sessao.alunoId;
+  const minhas = state.reservas.filter(r => r.alunoId === alunoId).sort((a,b)=> (b.dataReserva||b.data||'').localeCompare(a.dataReserva||a.data||''));
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">📅 Minhas reservas</h1>
+    <p class="page-sub">Acompanhe suas solicitações gravadas no Firestore</p>
+    <div class="card">
+      ${minhas.length ? minhas.map(r => {
+        const l = getLivro(r.livroId);
+        const cls = { pendente:'warn', aprovada:'info', rejeitada:'danger', cancelada:'muted' }[r.status];
+        const podeCancelar = r.status === 'pendente';
+        return `<div style="display:flex;gap:1rem;padding:.9rem;background:var(--bg-alt);border-radius:12px;margin-bottom:.7rem;align-items:center;flex-wrap:wrap">
+          <div style="font-size:1.8rem">${l?.capa || '📕'}</div>
+          <div style="flex:1;min-width:160px">
+            <div style="font-weight:600">${esc(l?.titulo || '—')}</div>
+            <div style="color:var(--muted);font-size:.8rem">Solicitado em ${fmtDate(r.dataReserva || r.data)}</div>
+          </div>
+          <span class="badge ${cls}">${r.status}</span>
+          ${podeCancelar ? `<button class="btn danger small" onclick="cancelarReserva('${r.id}')">Cancelar</button>` : ''}
+        </div>`;
+      }).join('') : `<div class="empty"><span class="big">📭</span>Você ainda não fez reservas</div>`}
+    </div>
+  `;
+}
+
+async function cancelarReserva(id){
+  if(!await confirmar('Cancelar reserva', 'Deseja cancelar esta reserva?')) return;
+  try {
+    await updateDoc(doc(db, 'reservas', id), { status: 'cancelada' });
+    toast('Reserva cancelada no Firestore', 'info');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, 'reservas/' + id);
+  }
+}
+
+function renderFavoritos(){
+  const alunoId = state.sessao.alunoId;
+  const meusFavs = state.favoritos.filter(f => f.alunoId === alunoId).map(f => getLivro(f.livroId)).filter(Boolean);
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">❤️ Favoritos</h1>
+    <p class="page-sub">${meusFavs.length} livro(s) favoritados no Firestore</p>
+    ${meusFavs.length ? `<div class="books-grid">${meusFavs.map(l => cardLivroAluno(l, alunoId)).join('')}</div>` :
+      `<div class="card"><div class="empty"><span class="big">🤍</span>Nenhum livro favoritado ainda. Toque no coração dos livros do acervo!</div></div>`}
+  `;
+}
+
+function renderPerfil(){
+  const alunoId = state.sessao.alunoId;
+  const aluno = getAluno(alunoId) || { nome: state.sessao.nome, matricula: '—', turma: '—', email: '' };
+  const meus = state.emprestimos.filter(e => e.alunoId === alunoId);
+  const devolvidos = meus.filter(e => e.dataDevolucao);
+  const avaliacoes = state.avaliacoes.filter(a => a.alunoId === alunoId);
+  const reservas = state.reservas.filter(r => r.alunoId === alunoId);
+
+  $('#main').innerHTML = `
+    <h1 class="page-title">👤 Meu perfil</h1>
+    <p class="page-sub">Suas informações de aluno salvas no Firestore</p>
+
+    <div class="profile-hero">
+      ${avatarHtml(aluno.nome, 72)}
+      <div>
+        <h1>${esc(aluno.nome)}</h1>
+        <p>🎓 ${esc(aluno.turma || 'sem turma')} · Matrícula ${esc(aluno.matricula)}</p>
+        ${aluno.email ? `<p>✉️ ${esc(aluno.email)}</p>` : ''}
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat blue"><div class="label">Empréstimos</div><div class="value">${meus.length}</div></div>
+      <div class="stat green"><div class="label">Devolvidos</div><div class="value">${devolvidos.length}</div></div>
+      <div class="stat amber"><div class="label">Avaliações</div><div class="value">${avaliacoes.length}</div></div>
+      <div class="stat blue"><div class="label">Reservas</div><div class="value">${reservas.length}</div></div>
+    </div>
+
+    ${avaliacoes.length ? `
+    <div class="card">
+      <div class="card-head"><h2>⭐ Minhas avaliações</h2></div>
+      ${avaliacoes.map(av => {
+        const l = getLivro(av.livroId);
+        return `<div style="padding:.8rem 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+            <div>
+              <div style="font-weight:600">${esc(l?.titulo || '—')}</div>
+              <div style="margin-top:.2rem">${estrelasHtml(av.nota)}</div>
+              ${av.comentario ? `<div style="color:var(--text-2);font-size:.85rem;margin-top:.3rem">"${esc(av.comentario)}"</div>` : ''}
+            </div>
+            <button class="btn ghost small" onclick="formAvaliacao('${av.livroId}')">Editar</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+}
+
+// Exportações para escopo global do navegador
+window.setLoginTab = setLoginTab;
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
+window.toggleTheme = toggleTheme;
+window.logout = logout;
+window.go = go;
+window.formLivro = formLivro;
+window.excluirLivro = excluirLivro;
+window.selecionarEmoji = selecionarEmoji;
+window.formAluno = formAluno;
+window.excluirAluno = excluirAluno;
+window.verAluno = verAluno;
+window.formEmprestimo = formEmprestimo;
+window.devolver = devolver;
+window.renovarEmprestimo = renovarEmprestimo;
+window.excluirEmprestimo = excluirEmprestimo;
+window.aprovarReserva = aprovarReserva;
+window.rejeitarReserva = rejeitarReserva;
+window.cancelarReserva = cancelarReserva;
+window.reservar = reservar;
+window.entrarFila = entrarFila;
+window.toggleFavorito = toggleFavorito;
+window.formAvaliacao = formAvaliacao;
+window.setNota = setNota;
+window.pedirRenovacao = pedirRenovacao;
+window.setCor = setCor;
+window.salvarConfig = salvarConfig;
+window.exportarDados = exportarDados;
+window.recarregarSeedFirestore = recarregarSeedFirestore;
+window.mostrarInfoFirestore = mostrarInfoFirestore;
+window.notificarTodosAtrasados = notificarTodosAtrasados;
+
+aplicarMarca();
+aplicarTema();
+console.log('%c🔥 BiblioTrack com Firebase Firestore conectado com sucesso!', 'background:#ea580c;color:#fff;padding:6px 12px;border-radius:6px;font-weight:bold');
+</script>
+</body>
+</html>

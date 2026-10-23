@@ -1,0 +1,278 @@
+{
+  "entities": {
+    "Livro": {
+      "title": "Livro",
+      "description": "Representa um livro cadastrado no acervo da biblioteca escolar",
+      "type": "object",
+      "properties": {
+        "titulo": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Título da obra literária"
+        },
+        "autor": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Autor ou responsável pela obra"
+        },
+        "categoria": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Gênero ou categoria do livro"
+        },
+        "ano": {
+          "type": "number",
+          "description": "Ano de publicação"
+        },
+        "quantidade": {
+          "type": "number",
+          "description": "Quantidade total de exemplares no acervo"
+        },
+        "capa": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Emoji ou ícone de capa"
+        },
+        "isbn": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Código ISBN do livro"
+        },
+        "sinopse": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Resumo descritivo da obra"
+        }
+      },
+      "required": ["titulo", "autor", "quantidade"]
+    },
+    "Aluno": {
+      "title": "Aluno",
+      "description": "Representa um aluno cadastrado no sistema da biblioteca",
+      "type": "object",
+      "properties": {
+        "nome": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Nome completo do aluno"
+        },
+        "matricula": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Número de matrícula único do estudante"
+        },
+        "turma": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Série ou turma do aluno"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Endereço de e-mail institucional ou de contato"
+        }
+      },
+      "required": ["nome", "matricula"]
+    },
+    "Emprestimo": {
+      "title": "Empréstimo",
+      "description": "Registro de empréstimo de livro para um aluno",
+      "type": "object",
+      "properties": {
+        "livroId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID do livro emprestado"
+        },
+        "alunoId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID do aluno que tomou o empréstimo"
+        },
+        "dataEmprestimo": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Data de saída do livro (AAAA-MM-DD)"
+        },
+        "dataPrevista": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Data limite prevista para devolução"
+        },
+        "dataDevolucao": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Data em que o livro foi devolvido ou null"
+        },
+        "renovacoes": {
+          "type": "number",
+          "description": "Contagem de renovações realizadas"
+        }
+      },
+      "required": ["livroId", "alunoId", "dataEmprestimo", "dataPrevista"]
+    },
+    "Reserva": {
+      "title": "Reserva",
+      "description": "Solicitação de reserva de exemplar",
+      "type": "object",
+      "properties": {
+        "livroId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID do livro reservado"
+        },
+        "alunoId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID do aluno solicitante"
+        },
+        "dataReserva": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Data do pedido de reserva"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pendente", "aprovada", "rejeitada", "cancelada"],
+          "description": "Situação atual da reserva"
+        }
+      },
+      "required": ["livroId", "alunoId", "dataReserva", "status"]
+    },
+    "Avaliacao": {
+      "title": "Avaliação",
+      "description": "Avaliação e resenha de um livro feita por um estudante",
+      "type": "object",
+      "properties": {
+        "livroId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID do livro avaliado"
+        },
+        "alunoId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID do aluno autor da avaliação"
+        },
+        "nota": {
+          "type": "number",
+          "description": "Classificação de 1 a 5 estrelas"
+        },
+        "comentario": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Texto da resenha ou comentário do leitor"
+        },
+        "data": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Data do registro da avaliação"
+        }
+      },
+      "required": ["livroId", "alunoId", "nota"]
+    },
+    "Favorito": {
+      "title": "Favorito",
+      "description": "Registro de livro favoritado pelo aluno",
+      "type": "object",
+      "properties": {
+        "alunoId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID do estudante"
+        },
+        "livroId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID do livro favoritado"
+        }
+      },
+      "required": ["alunoId", "livroId"]
+    },
+    "Configuracao": {
+      "title": "Configuração",
+      "description": "Configurações gerais da biblioteca escolar",
+      "type": "object",
+      "properties": {
+        "nomeEscola": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Nome da instituição ou biblioteca"
+        },
+        "emojiLogo": {
+          "type": "string",
+          "maxLength": 20,
+          "description": "Emoji ou ícone de marca"
+        },
+        "corAcento": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Cor primária da interface em hexadecimal"
+        },
+        "corAcento2": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Cor secundária da interface em hexadecimal"
+        },
+        "prazoPadrao": {
+          "type": "number",
+          "description": "Prazo padrão em dias para devolução"
+        },
+        "maxEmprestimos": {
+          "type": "number",
+          "description": "Limite máximo de empréstimos simultâneos por estudante"
+        },
+        "tema": {
+          "type": "string",
+          "enum": ["light", "dark"],
+          "description": "Tema visual preferencial"
+        }
+      },
+      "required": ["nomeEscola", "prazoPadrao", "maxEmprestimos"]
+    }
+  },
+  "firestore": {
+    "/livros/{livroId}": {
+      "schema": {
+        "$ref": "#/entities/Livro"
+      },
+      "description": "Coleção com todos os livros e exemplares do acervo"
+    },
+    "/alunos/{alunoId}": {
+      "schema": {
+        "$ref": "#/entities/Aluno"
+      },
+      "description": "Coleção com os dados e cadastros dos alunos"
+    },
+    "/emprestimos/{emprestimoId}": {
+      "schema": {
+        "$ref": "#/entities/Emprestimo"
+      },
+      "description": "Coleção de registros de empréstimos e devoluções"
+    },
+    "/reservas/{reservaId}": {
+      "schema": {
+        "$ref": "#/entities/Reserva"
+      },
+      "description": "Coleção de solicitações de reserva feitas por alunos"
+    },
+    "/avaliacoes/{avaliacaoId}": {
+      "schema": {
+        "$ref": "#/entities/Avaliacao"
+      },
+      "description": "Coleção de notas e resenhas de livros"
+    },
+    "/favoritos/{favoritoId}": {
+      "schema": {
+        "$ref": "#/entities/Favorito"
+      },
+      "description": "Coleção de livros favoritados pelos estudantes"
+    },
+    "/config/{configId}": {
+      "schema": {
+        "$ref": "#/entities/Configuracao"
+      },
+      "description": "Parâmetros e identidade visual da biblioteca"
+    }
+  }
+}

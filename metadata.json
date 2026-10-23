@@ -1,0 +1,8 @@
+{
+  "name": "BiblioTrack",
+  "description": "Sistema de controle e gerenciamento de biblioteca escolar com acervo de livros e cadastro de alunos.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

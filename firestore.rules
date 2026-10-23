@@ -1,0 +1,167 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection validation probe
+    match /test/{docId} {
+      allow get: if isValidId(docId);
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'anapaulafracheta@gmail.com' && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // ==================== LIVROS ====================
+    function isValidLivro(data) {
+      return data.keys().hasAll(['titulo', 'autor', 'quantidade']) &&
+             data.keys().hasOnly(['id', 'titulo', 'autor', 'categoria', 'ano', 'quantidade', 'capa', 'isbn', 'sinopse', 'createdAt', 'updatedAt']) &&
+             data.titulo is string && data.titulo.size() > 0 && data.titulo.size() <= 200 &&
+             data.autor is string && data.autor.size() > 0 && data.autor.size() <= 150 &&
+             data.quantidade is number && data.quantidade >= 0 &&
+             (!('categoria' in data) || (data.categoria is string && data.categoria.size() <= 100)) &&
+             (!('ano' in data) || (data.ano is number)) &&
+             (!('capa' in data) || (data.capa is string && data.capa.size() <= 100)) &&
+             (!('isbn' in data) || (data.isbn is string && data.isbn.size() <= 50)) &&
+             (!('sinopse' in data) || (data.sinopse is string && data.sinopse.size() <= 2000));
+    }
+
+    match /livros/{livroId} {
+      allow get, list: if isValidId(livroId);
+      allow create: if isValidId(livroId) && isValidLivro(incoming());
+      allow update: if isValidId(livroId) && isValidLivro(incoming());
+      allow delete: if isValidId(livroId);
+    }
+
+    // ==================== ALUNOS ====================
+    function isValidAluno(data) {
+      return data.keys().hasAll(['nome', 'matricula']) &&
+             data.keys().hasOnly(['id', 'nome', 'matricula', 'turma', 'email', 'createdAt', 'updatedAt']) &&
+             data.nome is string && data.nome.size() > 0 && data.nome.size() <= 150 &&
+             data.matricula is string && data.matricula.size() > 0 && data.matricula.size() <= 50 &&
+             (!('turma' in data) || (data.turma is string && data.turma.size() <= 50)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150));
+    }
+
+    match /alunos/{alunoId} {
+      allow get, list: if isValidId(alunoId);
+      allow create: if isValidId(alunoId) && isValidAluno(incoming());
+      allow update: if isValidId(alunoId) && isValidAluno(incoming());
+      allow delete: if isValidId(alunoId);
+    }
+
+    // ==================== EMPRÉSTIMOS ====================
+    function isValidEmprestimo(data) {
+      return data.keys().hasAll(['livroId', 'alunoId', 'dataEmprestimo', 'dataPrevista']) &&
+             data.keys().hasOnly(['id', 'livroId', 'alunoId', 'dataEmprestimo', 'dataPrevista', 'dataDevolucao', 'renovacoes']) &&
+             data.livroId is string && data.livroId.size() <= 128 &&
+             data.alunoId is string && data.alunoId.size() <= 128 &&
+             data.dataEmprestimo is string && data.dataEmprestimo.size() <= 30 &&
+             data.dataPrevista is string && data.dataPrevista.size() <= 30 &&
+             (!('dataDevolucao' in data) || data.dataDevolucao == null || (data.dataDevolucao is string && data.dataDevolucao.size() <= 30)) &&
+             (!('renovacoes' in data) || (data.renovacoes is number && data.renovacoes >= 0));
+    }
+
+    match /emprestimos/{emprestimoId} {
+      allow get, list: if isValidId(emprestimoId);
+      allow create: if isValidId(emprestimoId) && isValidEmprestimo(incoming());
+      allow update: if isValidId(emprestimoId) && isValidEmprestimo(incoming()) &&
+                    incoming().livroId == existing().livroId &&
+                    incoming().alunoId == existing().alunoId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['dataDevolucao', 'dataPrevista', 'renovacoes']);
+      allow delete: if isValidId(emprestimoId);
+    }
+
+    // ==================== RESERVAS ====================
+    function isValidReserva(data) {
+      return data.keys().hasAll(['livroId', 'alunoId', 'dataReserva', 'status']) &&
+             data.keys().hasOnly(['id', 'livroId', 'alunoId', 'dataReserva', 'status']) &&
+             data.livroId is string && data.livroId.size() <= 128 &&
+             data.alunoId is string && data.alunoId.size() <= 128 &&
+             data.dataReserva is string && data.dataReserva.size() <= 30 &&
+             data.status in ['pendente', 'aprovada', 'rejeitada', 'cancelada'];
+    }
+
+    match /reservas/{reservaId} {
+      allow get, list: if isValidId(reservaId);
+      allow create: if isValidId(reservaId) && isValidReserva(incoming());
+      allow update: if isValidId(reservaId) && isValidReserva(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+      allow delete: if isValidId(reservaId);
+    }
+
+    // ==================== AVALIAÇÕES ====================
+    function isValidAvaliacao(data) {
+      return data.keys().hasAll(['livroId', 'alunoId', 'nota']) &&
+             data.keys().hasOnly(['id', 'livroId', 'alunoId', 'nota', 'comentario', 'data']) &&
+             data.livroId is string && data.livroId.size() <= 128 &&
+             data.alunoId is string && data.alunoId.size() <= 128 &&
+             data.nota is number && data.nota >= 1 && data.nota <= 5 &&
+             (!('comentario' in data) || (data.comentario is string && data.comentario.size() <= 1000)) &&
+             (!('data' in data) || (data.data is string && data.data.size() <= 30));
+    }
+
+    match /avaliacoes/{avaliacaoId} {
+      allow get, list: if isValidId(avaliacaoId);
+      allow create: if isValidId(avaliacaoId) && isValidAvaliacao(incoming());
+      allow update: if isValidId(avaliacaoId) && isValidAvaliacao(incoming());
+      allow delete: if isValidId(avaliacaoId);
+    }
+
+    // ==================== FAVORITOS ====================
+    function isValidFavorito(data) {
+      return data.keys().hasAll(['alunoId', 'livroId']) &&
+             data.keys().hasOnly(['id', 'alunoId', 'livroId']) &&
+             data.alunoId is string && data.alunoId.size() <= 128 &&
+             data.livroId is string && data.livroId.size() <= 128;
+    }
+
+    match /favoritos/{favoritoId} {
+      allow get, list: if isValidId(favoritoId);
+      allow create: if isValidId(favoritoId) && isValidFavorito(incoming());
+      allow delete: if isValidId(favoritoId);
+    }
+
+    // ==================== CONFIGURAÇÃO ====================
+    function isValidConfig(data) {
+      return data.keys().hasAll(['nomeEscola', 'prazoPadrao', 'maxEmprestimos']) &&
+             data.keys().hasOnly(['nomeEscola', 'emojiLogo', 'corAcento', 'corAcento2', 'prazoPadrao', 'maxEmprestimos', 'tema']) &&
+             data.nomeEscola is string && data.nomeEscola.size() <= 100 &&
+             data.prazoPadrao is number && data.prazoPadrao > 0 &&
+             data.maxEmprestimos is number && data.maxEmprestimos > 0 &&
+             (!('emojiLogo' in data) || (data.emojiLogo is string && data.emojiLogo.size() <= 20)) &&
+             (!('corAcento' in data) || (data.corAcento is string && data.corAcento.size() <= 30)) &&
+             (!('corAcento2' in data) || (data.corAcento2 is string && data.corAcento2.size() <= 30)) &&
+             (!('tema' in data) || data.tema in ['light', 'dark']);
+    }
+
+    match /config/{configId} {
+      allow get, list: if isValidId(configId);
+      allow create, update: if isValidId(configId) && isValidConfig(incoming());
+    }
+  }
+}
